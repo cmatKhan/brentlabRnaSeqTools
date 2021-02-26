@@ -28,3 +28,11 @@ More documentation is on the way, but for now do this in the console:
 > ?createNinetyMinuteInductionSet
 ```
 Scroll to the bottom and click 'index' to get an index of avaialable functions
+
+# issues  
+please do post issues to the issues tab. Please include the full error code and the command/context that lead to the error
+
+# to contribute  
+1. fork the repo
+2. develop in a branch
+3. create a pull request for the branch
