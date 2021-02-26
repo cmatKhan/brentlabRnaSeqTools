@@ -77,7 +77,7 @@ rleIQRBarPlot = function(rle_summary_df, title){
 
 #' @export
 createRLEPlotsByReplicateGroup = function(rle_output_dir, meta_qual_df){
-
+  # TODO: SPECIFY NINETY MINUTE INDUCTION
 
   genotype_rle_full_list = Sys.glob(paste0(rle_output_dir, '/*full*'))
   genotype_rle_summary_list = Sys.glob(paste0(rle_output_dir, '/*summary*'))

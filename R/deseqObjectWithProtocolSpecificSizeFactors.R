@@ -7,8 +7,9 @@
 #'
 #' @export
 deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw_counts){
+
   colnames(passing_qc1_meta_qual) = toupper(colnames(passing_qc1_meta_qual))
-  sorted_passing_meta_qual = passing_qc1_meta_qual %>% group_by(LIBRARYPROTOCOL, LIBRARYDATE) %>% arrange(LIBRARYDATE, .by_group = TRUE)
+  sorted_passing_meta_qual = passing_qc1_meta_qual %>% arrange(LIBRARYPROTOCOL, LIBRARYDATE)
 
   sorted_passing_induction_raw_counts = raw_counts[, passing_qc1_meta_qual$FASTQFILENAME]
 

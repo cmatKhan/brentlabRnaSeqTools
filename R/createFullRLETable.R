@@ -14,15 +14,18 @@ createFullRLETable = function(counts_df, gene_id_column = NULL, logged = FALSE){
   if(!is.null(gene_id_column)){
     stopifnot(length(gene_id_column) == nrow(counts_df))
   } else {
-    gene_id_column = seq(1:nrow(count_df))
+    gene_id_column = seq(1:nrow(counts_df))
   }
 
+  # TODO: REMOVE THE GENE_ID ARGUMENT AND JUST REMOVE THE GENE_ID COLUMN IF IT EXISTS
   counts_df = as_tibble(counts_df)
   counts_df$gene_id = gene_id_column
 
+  counts_df = counts_df %>% select(-gene_id)
+
   if(logged == FALSE){
     # log2 the table (add pseudo count of 1)
-    log2_counts_df = log2(counts_df %>% select(-gene_id) + 1)
+    log2_counts_df = log2(counts_df + 1)
   } else{
     log2_counts_df = counts_df
   }
