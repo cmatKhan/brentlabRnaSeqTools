@@ -6,7 +6,6 @@
 #' @param table_vector list of tables to get from api_url. DEFAULT: c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
 #' @return a dataframe of the joined tables in the database
 #' @export
-
 getMetadata = function(api_url, table_vector = c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")){
 
   tablename_vector = table_vector
