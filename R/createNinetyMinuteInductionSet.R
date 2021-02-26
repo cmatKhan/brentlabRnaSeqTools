@@ -4,6 +4,7 @@
 #' @param grant_df is the 2016 grant summary TODO: put this in DATA
 #'
 #' @return the 90minuteInduction metadata
+#'
 #' @export
 createNinetyMinuteInductionSet = function(metadata, grant_df){
   metadata = metadata %>% dplyr::mutate(treatment = replace_na(treatment, 'noTreatment'))
