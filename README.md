@@ -23,6 +23,11 @@ install_github("cmatKhan/brentlabRnaSeqTools")
 You might also try this, if you get a namespace error:  
 install_github("cmatKhan/brentlabRnaSeqTools", force=TRUE)
 ```
+# uninstall
+```
+remove.packages("brentlabRnaSeqTools")
+```
+
 More documentation is on the way, but for now do this in the console:  
 ```
 > ?createNinetyMinuteInductionSet
