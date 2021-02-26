@@ -6,3 +6,5 @@
 .Rbuildignore
 .Rhistory
 *.Rproj
+packrat/lib*/
+packrat/src/
