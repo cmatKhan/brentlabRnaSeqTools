@@ -5,7 +5,7 @@
 #'
 #' @export
 createLibrarydateModelMatrix = function(metadata_df){
-  colnames(metadata_df) = toupper(metadata_df)
+  colnames(metadata_df) = toupper(colnames(metadata_df))
   # cast librarydate to datetime object
   metadata_df$LIBRARYDATE = as.Date(metadata_df$LIBRARYDATE)
   # create model.frame

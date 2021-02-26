@@ -19,6 +19,16 @@ library(brentlabRnaSeqTools)
 ```
 
 ```{r}
+# NOTE: api_url is an environmental variable of the package that stores the current url to the crypto database api
+combined_df = getMetadata(api_url)
+```
+
+```{r}
+# grant df is a dataframe of the 2016 grant summary, loaded with the package
+induction_set = createNinetyMinuteInductionSet(combined_df, grant_df)
+```
+### read in a deseq data set for this data that has had the DESeq function called on it (this should be done on the cluster)
+```{r}
 # this is in my scratch space (until the garbage collector gets it) at /scratch/mblab/chasem/rnaseq_pipeline/experiments/database_90_min_update. Feel free to rsync or scp it.
 path = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/database_pulled_libraryptocol_librarydate_20210225.rds"
 deseq_object = readRDS(path)
@@ -31,17 +41,27 @@ norm_counts = counts(deseq_object, normalized=TRUE)
 ```{r}
 # NOTE: in this case, since there are no "wanted" covariates, we pass the entire design matrix (library protocol + librarydate).
 # If genotype was included, then we would need to subset the design matrix to just the nuisance variable columns
-removed_librarydate_effect_log_norm_counts = removeEffect(deseq_object, design(deseq_object))
+removed_librarydate_effect_log_norm_counts = removeParameterEffects(deseq_object, design(deseq_object))
 ```
 ### RLE
 ```{r, include=FALSE}
-norm_output = "norm_counts_rle"
-sorted_passing_induction_meta_qual$GENOTYPE = sorted_passing_induction_meta_qual$GENOTYPE1
-extractRLEByReplicateGroup(sorted_passing_induction_meta_qual, norm_counts, norm_output, protocol_selector = FALSE, already_logged_flag = FALSE)
-createRLEPlotsByReplicateGroup(norm_output, sorted_passing_induction_meta_qual)
+# obviously, change the output paths
+norm_output = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/rle/norm_counts_rle"
+removed_effect_output = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/rle/librarydate_effect_removed"
+dir.create(norm_output)
+dir.create(removed_effect_output)
 
-removed_effect_output = "librarydate_effect_removed"
-extractRLEByReplicateGroup(sorted_passing_induction_meta_qual, removed_librarydate_effect_log_norm_counts, removed_effect_output, protocol_selector = FALSE, already_logged_flag = TRUE)
+sorted_passing_induction_meta_qual = as_tibble(colData(deseq_object))
+```
+
+```{r}
+sorted_passing_induction_meta_qual$GENOTYPE = sorted_passing_induction_meta_qual$GENOTYPE1
+extractRLEByReplicateGroup_90minInduction(sorted_passing_induction_meta_qual, norm_counts, norm_output, protocol_selector = FALSE, already_logged_flag = FALSE)
+createRLEPlotsByReplicateGroup(norm_output, sorted_passing_induction_meta_qual)
+```
+
+```{r}
+extractRLEByReplicateGroup_90minInduction(sorted_passing_induction_meta_qual, removed_librarydate_effect_log_norm_counts, removed_effect_output, protocol_selector = FALSE, already_logged_flag = TRUE)
 createRLEPlotsByReplicateGroup(removed_effect_output, sorted_passing_induction_meta_qual)
 ```
 
@@ -50,13 +70,13 @@ createRLEPlotsByReplicateGroup(removed_effect_output, sorted_passing_induction_m
 # induction_samples_meta_qual_df$GENOTYPE = paste(induction_samples_meta_qual_df$GENOTYPE1,induction_samples_meta_qual_df$GENOTYPE2, sep="." )
 # induction_samples_meta_qual_df$GENOTYPE = str_remove(induction_samples_meta_qual_df$GENOTYPE, "\\.NA$")
 
-norm_counts_rle_summary_list = Sys.glob("norm_counts_rle/*summary*")
+norm_counts_rle_summary_list = Sys.glob(paste(norm_output,"*summary*", sep="/"))
 norm_counts_rle_summary_df_list = lapply(norm_counts_rle_summary_list, read_csv)
 norm_counts_rle_summary = bind_rows(norm_counts_rle_summary_df_list)
 
 norm_counts_rle_summary = left_join(norm_counts_rle_summary, sorted_passing_induction_meta_qual, on="FASTQFILENAME")
 
-removed_effect_rle_summary_list = Sys.glob("librarydate_effect_removed/*summary*")
+removed_effect_rle_summary_list = Sys.glob(paste(removed_effect_output,"*summary*", sep="/"))
 removed_effect_rle_summary_df_list = lapply(removed_effect_rle_summary_list, read_csv)
 
 removed_effect_rle_summary = bind_rows(removed_effect_rle_summary_df_list)
@@ -72,13 +92,28 @@ removed_effect_rle_summary = left_join(removed_effect_rle_summary, sorted_passin
 iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE<.6125)
 # write_csv(iqr_fltr_rle_summary, 'iqr_fltr_meta_qual.csv')
 ```
-### create tally
+
 ```{r}
-induction_set_tally = createInductionSetTally(induction_set, as.data.frame(colData(deseq_object)), iqr_fltr_rle_summary, grant_df)
+plotRLE_bar_iqr = function(rle_summary_df, title){
+  x =ggplot(rle_summary_df, aes(INTERQUARTILE_RANGE))+
+    geom_histogram()+ggtitle(title)
+  # dev.off()
+  return(x)
+}
+
+hist = plotRLE_bar_iqr(removed_effect_rle_summary, "iqr")
+
+plot(hist)
 ```
 
+### create tally
+```{r}
+induction_set_tally = createInductionSetTally(induction_set, as_tibble(colData(deseq_object)), iqr_fltr_rle_summary, grant_df)
+```
+### parse replicate sets out for the website table
+```{r}
 
-
+```
 
 
 
