@@ -5,7 +5,6 @@
 #'
 #' @return the 90minuteInduction metadata
 #' @export
-
 createNinetyMinuteInductionSet = function(metadata, grant_df){
   metadata = metadata %>% dplyr::mutate(treatment = replace_na(treatment, 'noTreatment'))
   metadata = metadata %>% dplyr::mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions'))

@@ -9,7 +9,6 @@
 #'
 #' @return a dataframe of gene x sample
 #' @export
-
 getRawCounts = function(api_url, tablename="Counts"){
   #' colnames are fastq filenames without any suffix (eg, no _read_counts.tsv or .fastq.gz)
   #' ONLY PROTEIN CODING 0:6967

@@ -5,7 +5,6 @@
 #'                   column in passing_qc1_meta_qual.
 #' @return a deseq data object with size factors calculated within the library protocol groups
 #' @export
-
 deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw_counts){
   colnames(passing_qc1_meta_qual) = toupper(colnames(passing_qc1_meta_qual))
   sorted_passing_meta_qual = passing_qc1_meta_qual %>% group_by(LIBRARYPROTOCOL, LIBRARYDATE) %>% arrange(LIBRARYDATE, .by_group = TRUE)

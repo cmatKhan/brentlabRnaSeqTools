@@ -3,7 +3,6 @@
 #' @param metadata_df the joined tables of the database (biosample to quality assess)
 #' @return a model matrix constructed as specified in the description
 #' @export
-
 createLibrarydateModelMatrix = function(metadata_df){
   colnames(metadata_df) = toupper(metadata_df)
   # cast librarydate to datetime object
