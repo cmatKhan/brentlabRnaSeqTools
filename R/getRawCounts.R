@@ -1,11 +1,11 @@
 #' get raw counts from database
 #'
 #' this downloads into $TEMPDIR a number of files (the paginations of the counts table) and then concats the counts.
+#'
 #' @note it only takes the first 6967 genes (hard coded currently) which are the protein coding annotations in the current gff
 #' @note column names are just the fastq file name (no .fastq.gz, no _read_count.tsv or any other suffix)
 #'
-#' @params api_url is the url to the api minus any table names, eg "http://13.59.167.2/api"
-#'         No trailing /
+#' @param api_url is the url to the api minus any table names, eg "http://13.59.167.2/api" No trailing /
 #'
 #' @return a dataframe of gene x sample
 #' @export

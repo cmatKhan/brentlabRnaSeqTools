@@ -2,9 +2,8 @@
 #'
 #' GET tables specified in table_vector, join on keys, return combined tables as a dataframe
 #'
-#' @params api_url is the url to the api minus any table names, eg "http://13.59.167.2/api"
-#'         No trailing /
-#' @params table_vector list of tables to get from api_url. DEFAULT: c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
+#' @param api_url is the url to the api minus any table names, eg "http://13.59.167.2/api" No trailing /
+#' @param table_vector list of tables to get from api_url. DEFAULT: c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
 #' @return a dataframe of the joined tables in the database
 #' @export
 
