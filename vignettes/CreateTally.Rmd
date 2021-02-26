@@ -1,0 +1,91 @@
+---
+title: "CreateTally"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{CreateTally}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(brentlabRnaSeqTools)
+```
+
+```{r}
+# this is in my scratch space (until the garbage collector gets it) at /scratch/mblab/chasem/rnaseq_pipeline/experiments/database_90_min_update. Feel free to rsync or scp it.
+path = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/database_pulled_libraryptocol_librarydate_20210225.rds"
+deseq_object = readRDS(path)
+```
+### extract norm counts
+```{r}
+norm_counts = counts(deseq_object, normalized=TRUE)
+```
+### remove the library protocol and date effects
+```{r}
+# NOTE: in this case, since there are no "wanted" covariates, we pass the entire design matrix (library protocol + librarydate).
+# If genotype was included, then we would need to subset the design matrix to just the nuisance variable columns
+removed_librarydate_effect_log_norm_counts = removeEffect(deseq_object, design(deseq_object))
+```
+### RLE
+```{r, include=FALSE}
+norm_output = "norm_counts_rle"
+sorted_passing_induction_meta_qual$GENOTYPE = sorted_passing_induction_meta_qual$GENOTYPE1
+extractRLEByReplicateGroup(sorted_passing_induction_meta_qual, norm_counts, norm_output, protocol_selector = FALSE, already_logged_flag = FALSE)
+createRLEPlotsByReplicateGroup(norm_output, sorted_passing_induction_meta_qual)
+
+removed_effect_output = "librarydate_effect_removed"
+extractRLEByReplicateGroup(sorted_passing_induction_meta_qual, removed_librarydate_effect_log_norm_counts, removed_effect_output, protocol_selector = FALSE, already_logged_flag = TRUE)
+createRLEPlotsByReplicateGroup(removed_effect_output, sorted_passing_induction_meta_qual)
+```
+
+```{r, include=FALSE}
+
+# induction_samples_meta_qual_df$GENOTYPE = paste(induction_samples_meta_qual_df$GENOTYPE1,induction_samples_meta_qual_df$GENOTYPE2, sep="." )
+# induction_samples_meta_qual_df$GENOTYPE = str_remove(induction_samples_meta_qual_df$GENOTYPE, "\\.NA$")
+
+norm_counts_rle_summary_list = Sys.glob("norm_counts_rle/*summary*")
+norm_counts_rle_summary_df_list = lapply(norm_counts_rle_summary_list, read_csv)
+norm_counts_rle_summary = bind_rows(norm_counts_rle_summary_df_list)
+
+norm_counts_rle_summary = left_join(norm_counts_rle_summary, sorted_passing_induction_meta_qual, on="FASTQFILENAME")
+
+removed_effect_rle_summary_list = Sys.glob("librarydate_effect_removed/*summary*")
+removed_effect_rle_summary_df_list = lapply(removed_effect_rle_summary_list, read_csv)
+
+removed_effect_rle_summary = bind_rows(removed_effect_rle_summary_df_list)
+
+removed_effect_rle_summary = left_join(removed_effect_rle_summary, sorted_passing_induction_meta_qual, on="FASTQFILENAME")
+
+# write_csv(norm_counts_rle_summary, "../20201214_rle_d3_visualization/vis/data/norm_counts_rle_summary_20210121.csv")
+# write_csv(removed_effect_rle_summary, "../20201214_rle_d3_visualization/vis/data/librarydate_effect_removed_counts_rle_summary_20210121.csv")
+
+```
+### filter samples
+```{r}
+iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE<.6125)
+# write_csv(iqr_fltr_rle_summary, 'iqr_fltr_meta_qual.csv')
+```
+### create tally
+```{r}
+induction_set_tally = createInductionSetTally(induction_set, as.data.frame(colData(deseq_object)), iqr_fltr_rle_summary, grant_df)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
