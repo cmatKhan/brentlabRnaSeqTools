@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: 
     person(given = "Chase",
            family = "Mateusiak",
-           role = c("code monkey"),
+           role = c("aut", "cre"),
            email = "chase.mateusiak@gmail.com")
 Description: Pull metadata and counts from the crypto database
 License: use_mit_license()
