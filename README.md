@@ -22,6 +22,9 @@ install_github("cmatKhan/brentlabRnaSeqTools", build_vignettes = TRUE)
 
 You might also try this, if you get a namespace error:  
 install_github("cmatKhan/brentlabRnaSeqTools", force=TRUE)
+.rs.restartR()
+
+# after you get the package installed, do this:
 library(brentlabRnaSeqTools)
 ```
 # uninstall
