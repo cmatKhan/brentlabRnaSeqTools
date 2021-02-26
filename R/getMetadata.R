@@ -1,8 +1,9 @@
 #' Get Combined Metadata from the database
 #'
 #' GET tables specified in table_vector, join on keys, return combined tables as a dataframe
-#'
-#' @param api_url is the url to the api minus any table names, eg "http://13.59.167.2/api" No trailing /
+#' @usage getMetadata(api_url)
+#' @param api_url NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /
+#' @note api_url is a environmental variable saved in the package which will point to the current url (as of now, the one listed above)
 #' @param table_vector list of tables to get from api_url. DEFAULT: c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
 #' @return a dataframe of the joined tables in the database
 #'
