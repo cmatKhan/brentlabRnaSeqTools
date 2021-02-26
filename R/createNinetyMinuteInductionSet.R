@@ -15,8 +15,7 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
   metadata$temperature %<>% as.numeric
   metadata$timePoint %<>% as.numeric
 
-  condition_fltr_metadata = metadata %>%
-    filter(medium %in% c("DMEM"),temperature %in% c(37),atmosphere %in% c("CO2"),treatment %in% c("noTreatment"),otherConditions %in% c("noOtherConditions"),pH %in% c("noPh"),timePoint %in% c(90),strain != "TDY1993",purpose=="fullRNASeq",!is.na(fastqFileName),str_detect(genotype1, "CNAG"),is.na(genotype2), perturbation1 =='deletion' | is.na(perturbation1))
+  condition_fltr_metadata = metadata %>% filter(medium %in% c("DMEM"),temperature %in% c(37),atmosphere %in% c("CO2"),treatment %in% c("noTreatment"),otherConditions %in% c("noOtherConditions"),pH %in% c("noPh"),timePoint %in% c(90),strain != "TDY1993",purpose=="fullRNASeq",!is.na(fastqFileName),str_detect(genotype1, "CNAG"),is.na(genotype2), perturbation1 =="deletion" | is.na(perturbation1))
 
   # get wildtypes
   wt_induction_set = condition_fltr_metadata %>% filter(genotype1 == "CNAG_00000")
