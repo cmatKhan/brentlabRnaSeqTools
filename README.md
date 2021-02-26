@@ -22,6 +22,7 @@ install_github("cmatKhan/brentlabRnaSeqTools")
 
 You might also try this, if you get a namespace error:  
 install_github("cmatKhan/brentlabRnaSeqTools", force=TRUE)
+library(brentlabRnaSeqTools)
 ```
 # uninstall
 ```
