@@ -1,11 +1,19 @@
 # brentlabRnaSeqTools
 
 This is a very helpful tutorial on making an R package:  
-https://tinyheero.github.io/jekyll/update/2015/07/26/making-your-first-R-package.html
+https://tinyheero.github.io/jekyll/update/2015/07/26/making-your-first-R-package.html  
+
+this github post helped with installing bioconductor dependencies (deseq2 in this case):  
+https://bioinformatics.stackexchange.com/a/3375  
+
+and this helped with installing from github:  
+https://cran.r-project.org/web/packages/githubinstall/vignettes/githubinstall.html
+
+Finally, here is a nice package development cheatsheet (for R):  
+https://rawgit.com/rstudio/cheatsheets/master/package-development.pdf
 
 # Installation  
 In R, do the following:  
-
 ```
 library(devtools)
 
