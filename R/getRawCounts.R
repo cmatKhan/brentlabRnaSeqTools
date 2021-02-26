@@ -8,6 +8,7 @@
 #' @param api_url is the url to the api minus any table names, eg "http://13.59.167.2/api" No trailing /
 #'
 #' @return a dataframe of gene x sample
+#'
 #' @export
 getRawCounts = function(api_url, tablename="Counts"){
   #' colnames are fastq filenames without any suffix (eg, no _read_counts.tsv or .fastq.gz)

@@ -4,6 +4,7 @@
 #' @param raw_counts a dataframe of raw counts with genes in the rows and samples in the columns. sample names must be the same as the fastqFileName
 #'                   column in passing_qc1_meta_qual.
 #' @return a deseq data object with size factors calculated within the library protocol groups
+#'
 #' @export
 deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw_counts){
   colnames(passing_qc1_meta_qual) = toupper(colnames(passing_qc1_meta_qual))
