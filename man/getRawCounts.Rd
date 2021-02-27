@@ -2,21 +2,16 @@
 % Please edit documentation in R/getRawCounts.R
 \name{getRawCounts}
 \alias{getRawCounts}
-\title{get raw counts from database}
+\title{Get combined raw counts}
 \usage{
-getRawCounts(api_url, tablename = "Counts")
+getRawCounts(api_url)
 }
 \arguments{
-\item{api_url}{is the url to the api minus any table names, eg "http://13.59.167.2/api" No trailing /}
+\item{api_url}{NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /}
 }
 \value{
-a dataframe of gene x sample
+a gene by samples dataframe of all counts
 }
 \description{
-this downloads into $TEMPDIR a number of files (the paginations of the counts table) and then concats the counts.
-}
-\note{
-it only takes the first 6967 genes (hard coded currently) which are the protein coding annotations in the current gff
-
-column names are just the fastq file name (no .fastq.gz, no _read_count.tsv or any other suffix)
+GET raw counts
 }
