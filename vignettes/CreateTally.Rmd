@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, include = FALSE}
 library(brentlabRnaSeqTools)
 ```
 
@@ -23,22 +23,22 @@ library(brentlabRnaSeqTools)
 combined_df = getMetadata(api_url)
 ```
 
-```{r}
+```{r, include = FALSE}
 # grant df is a dataframe of the 2016 grant summary, loaded with the package
 induction_set = createNinetyMinuteInductionSet(combined_df, grant_df)
 ```
 ### read in a deseq data set for this data that has had the DESeq function called on it (this should be done on the cluster)
-```{r}
+```{r, include = FALSE}
 # this is in my scratch space (until the garbage collector gets it) at /scratch/mblab/chasem/rnaseq_pipeline/experiments/database_90_min_update. Feel free to rsync or scp it.
 path = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/database_pulled_libraryptocol_librarydate_20210225.rds"
 deseq_object = readRDS(path)
 ```
 ### extract norm counts
-```{r}
+```{r, include = FALSE}
 norm_counts = counts(deseq_object, normalized=TRUE)
 ```
 ### remove the library protocol and date effects
-```{r}
+```{r, include = FALSE}
 # NOTE: in this case, since there are no "wanted" covariates, we pass the entire design matrix (library protocol + librarydate).
 # If genotype was included, then we would need to subset the design matrix to just the nuisance variable columns
 removed_librarydate_effect_log_norm_counts = removeParameterEffects(deseq_object, design(deseq_object))
@@ -54,13 +54,13 @@ dir.create(removed_effect_output)
 sorted_passing_induction_meta_qual = as_tibble(colData(deseq_object))
 ```
 
-```{r}
+```{r, include = FALSE}
 sorted_passing_induction_meta_qual$GENOTYPE = sorted_passing_induction_meta_qual$GENOTYPE1
 extractRLEByReplicateGroup_90minInduction(sorted_passing_induction_meta_qual, norm_counts, norm_output, protocol_selector = FALSE, already_logged_flag = FALSE)
 createRLEPlotsByReplicateGroup(norm_output, sorted_passing_induction_meta_qual)
 ```
 
-```{r}
+```{r, include = FALSE}
 extractRLEByReplicateGroup_90minInduction(sorted_passing_induction_meta_qual, removed_librarydate_effect_log_norm_counts, removed_effect_output, protocol_selector = FALSE, already_logged_flag = TRUE)
 createRLEPlotsByReplicateGroup(removed_effect_output, sorted_passing_induction_meta_qual)
 ```
@@ -88,7 +88,7 @@ removed_effect_rle_summary = left_join(removed_effect_rle_summary, sorted_passin
 
 ```
 ### filter samples
-```{r}
+```{r, include = FALSE}
 iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE<.6125)
 # write_csv(iqr_fltr_rle_summary, 'iqr_fltr_meta_qual.csv')
 ```
@@ -107,12 +107,33 @@ plot(hist)
 ```
 
 ### create tally
-```{r}
+```{r, include = FALSE}
 induction_set_tally = createInductionSetTally(induction_set, as_tibble(colData(deseq_object)), iqr_fltr_rle_summary, grant_df)
+write_csv(induction_set_tally, "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/induction_experiment_table/data/genotype_tally.csv")
 ```
 ### parse replicate sets out for the website table
-```{r}
+```{r, include=FALSE}
+induction_meta_qual_with_iqr = induction_set %>% left_join(removed_effect_rle_summary %>% select(FASTQFILENAME, INTERQUARTILE_RANGE, ABS_SAMPLE_DEVIATION_MEDIAN))
+# DO THIS FOR VISUALIZATION TO FIND BROWSER SHOT
+induction_meta_qual_with_iqr$FASTQFILENAME = paste0(induction_meta_qual_with_iqr$FASTQFILENAME, '.fastq.gz')
 
+table_vis_meta_qual = induction_meta_qual_with_iqr %>% select(AUTOAUDIT, AUTOSTATUSDECOMP, MANUALAUDIT, MANUALSTATUS, FASTQFILENAME, RUNNUMBER, LIBRARYDATE, GENOTYPE1, STRAIN, PROTEINCODINGTOTAL, NOTALIGNEDTOTALPERCENT, INTERQUARTILE_RANGE, ABS_SAMPLE_DEVIATION_MEDIAN, GENOTYPE1COVERAGE, GENOTYPE1LOG2CPM, NATCOVERAGE, NATLOG2CPM, G418COVERAGE, G418LOG2CPM)
+write_csv(table_vis_meta_qual, '/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/induction_experiment_table/data/sample_detail_meta_qual_.csv')
+```
+
+```{r, include=FALSE}
+perturbed_induction_set = table_vis_meta_qual %>% filter(GENOTYPE1 != 'CNAG_00000')
+
+induction_set_split = split(perturbed_induction_set, f=list(perturbed_induction_set$GENOTYPE1))
+```
+
+```{r}
+for(geno in names(induction_set_split)){
+  print(geno)
+  df = induction_set_split[[geno]]
+  filename = str_trim(paste0(geno, ".csv"),side="both")
+  write_csv(df, paste0('/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/induction_experiment_table/data/split_by_genotype/', filename))
+}
 ```
 
 

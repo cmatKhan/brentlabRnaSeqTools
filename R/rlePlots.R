@@ -15,6 +15,7 @@ rleBoxplots= function(rle_table_full, meta_qual_df, fill_column, fill_column_col
   #' eg) c("0" = "#52854C", "1" = "#D16103")
 
   df = stack(rle_table_full)
+  meta_qual_df$LIBRARYDATE = as.factor(meta_qual_df$LIBRARYDATE)
 
   stacked_rle_meta_qual_df = df %>% left_join(meta_qual_df, by=c('ind'='FASTQFILENAME'), copy=TRUE)
 

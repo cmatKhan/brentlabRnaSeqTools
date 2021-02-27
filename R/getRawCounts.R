@@ -1,18 +1,13 @@
-#' get raw counts from database
+#' Get combined raw counts
 #'
-#' this downloads into $TEMPDIR a number of files (the paginations of the counts table) and then concats the counts.
-#'
-#' @note it only takes the first 6967 genes (hard coded currently) which are the protein coding annotations in the current gff
-#' @note column names are just the fastq file name (no .fastq.gz, no _read_count.tsv or any other suffix)
-#'
-#' @param api_url is the url to the api minus any table names, eg "http://13.59.167.2/api" No trailing /
-#'
-#' @return a dataframe of gene x sample
+#' GET raw counts
+#' @usage getRawCounts(api_url)
+#' @param api_url NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /
+#' @return a gene by samples dataframe of all counts
 #'
 #' @export
-getRawCounts = function(api_url, tablename="Counts"){
-  #' colnames are fastq filenames without any suffix (eg, no _read_counts.tsv or .fastq.gz)
-  #' ONLY PROTEIN CODING 0:6967
+getRawCounts = function(api_url){
+  tablename="Counts"
 
   tmp_dir = tempdir()
 

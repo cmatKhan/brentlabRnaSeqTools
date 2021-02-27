@@ -9,15 +9,15 @@
 deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw_counts){
 
   colnames(passing_qc1_meta_qual) = toupper(colnames(passing_qc1_meta_qual))
-  sorted_passing_meta_qual = passing_qc1_meta_qual %>% arrange(LIBRARYPROTOCOL, LIBRARYDATE)
+  sorted_passing_meta_qual = passing_qc1_meta_qual %>% group_by(LIBRARYDATE, LIBRARYPROTOCOL) %>% arrange(.by_group = TRUE)
 
-  sorted_passing_induction_raw_counts = raw_counts[, passing_qc1_meta_qual$FASTQFILENAME]
+  sorted_passing_induction_raw_counts = raw_counts[, sorted_passing_meta_qual$FASTQFILENAME]
 
   old_protocol_sorted_passing_meta_qual = sorted_passing_meta_qual %>% filter(LIBRARYPROTOCOL == "SolexaPrep")
-  old_protocol_sorted_passing_counts = raw_counts[, old_protocol_sorted_passing_meta_qual$FASTQFILENAME]
+  old_protocol_sorted_passing_counts = sorted_passing_induction_raw_counts[, old_protocol_sorted_passing_meta_qual$FASTQFILENAME]
 
   new_protocol_sorted_passing_meta_qual = sorted_passing_meta_qual %>% filter(LIBRARYPROTOCOL == "E7420L")
-  new_protocol_sorted_passing_counts = raw_counts[, new_protocol_sorted_passing_meta_qual$FASTQFILENAME]
+  new_protocol_sorted_passing_counts = sorted_passing_induction_raw_counts[, new_protocol_sorted_passing_meta_qual$FASTQFILENAME]
 
   libraryprotocol_librarydate_model_matrix = createLibrarydateModelMatrix(sorted_passing_meta_qual)
 
@@ -28,13 +28,15 @@ deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw
 
   new_dds = estimateSizeFactors(new_dds)
 
-  size_factor_list = c(sizeFactors(new_dds), sizeFactors(old_dds))
+  size_factor_list = c(sizeFactors(old_dds), sizeFactors(new_dds))
+
+  stopifnot(all.equal(names(size_factor_list), sorted_passing_meta_qual$FASTQFILENAME, colnames(sorted_passing_induction_raw_counts)), rownames(libraryprotocol_librarydate_model_matrix))
 
   dds = DESeqDataSetFromMatrix(colData = sorted_passing_meta_qual, countData = sorted_passing_induction_raw_counts, design=libraryprotocol_librarydate_model_matrix)
 
   sizeFactors(dds) = size_factor_list
 
-  stopifnot(all.equal(names(size_factor_list), sorted_passing_meta_qual$FASTQFILENAME, colnames(sorted_passing_induction_raw_counts)))
+  stopifnot(all.equal(names(sizeFactors(dds)), as_tibble(colData(dds))$FASTQFILENAME, colnames(counts(dds))), rownames(design(dds)))
 
   return(dds)
 }
