@@ -16,12 +16,15 @@ https://rawgit.com/rstudio/cheatsheets/master/package-development.pdf
 In R, do the following:  
 ```
 library(devtools)
-
-install_github("cmatKhan/brentlabRnaSeqTools") 
+# remove build_vignettes to save time
+install_github("cmatKhan/brentlabRnaSeqTools", build_vignettes = TRUE)
 # NOTE: you can set the argument upgrade = "ask" or upgrade = "never" to avoid upgrading other packages, though if you're in your base environment, you might as well upgrade if you have time
 
 You might also try this, if you get a namespace error:  
 install_github("cmatKhan/brentlabRnaSeqTools", force=TRUE)
+.rs.restartR()
+
+# after you get the package installed, do this:
 library(brentlabRnaSeqTools)
 ```
 # uninstall
