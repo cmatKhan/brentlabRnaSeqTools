@@ -30,7 +30,7 @@ induction_set = createNinetyMinuteInductionSet(combined_df, grant_df)
 ### read in a deseq data set for this data that has had the DESeq function called on it (this should be done on the cluster)
 ```{r, include = FALSE}
 # this is in my scratch space (until the garbage collector gets it) at /scratch/mblab/chasem/rnaseq_pipeline/experiments/database_90_min_update. Feel free to rsync or scp it.
-path = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/database_pulled_libraryptocol_librarydate_20210225.rds"
+path = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/database_pulled_libraryptocol_librarydate_20210227.rds"
 deseq_object = readRDS(path)
 ```
 ### extract norm counts
@@ -127,7 +127,7 @@ perturbed_induction_set = table_vis_meta_qual %>% filter(GENOTYPE1 != 'CNAG_0000
 induction_set_split = split(perturbed_induction_set, f=list(perturbed_induction_set$GENOTYPE1))
 ```
 
-```{r}
+```{r, include=FALSE}
 for(geno in names(induction_set_split)){
   print(geno)
   df = induction_set_split[[geno]]

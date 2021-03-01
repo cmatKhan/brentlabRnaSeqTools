@@ -30,13 +30,13 @@ deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw
 
   size_factor_list = c(sizeFactors(old_dds), sizeFactors(new_dds))
 
-  stopifnot(all.equal(names(size_factor_list), sorted_passing_meta_qual$FASTQFILENAME, colnames(sorted_passing_induction_raw_counts)), rownames(libraryprotocol_librarydate_model_matrix))
+  stopifnot(all.equal(names(size_factor_list), sorted_passing_meta_qual$FASTQFILENAME, colnames(sorted_passing_induction_raw_counts), rownames(libraryprotocol_librarydate_model_matrix)) )
 
   dds = DESeqDataSetFromMatrix(colData = sorted_passing_meta_qual, countData = sorted_passing_induction_raw_counts, design=libraryprotocol_librarydate_model_matrix)
 
   sizeFactors(dds) = size_factor_list
 
-  stopifnot(all.equal(names(sizeFactors(dds)), as_tibble(colData(dds))$FASTQFILENAME, colnames(counts(dds))), rownames(design(dds)))
+  stopifnot(all.equal(names(sizeFactors(dds)), as_tibble(colData(dds))$FASTQFILENAME, colnames(counts(dds)), rownames(design(dds))) )
 
   return(dds)
 }
