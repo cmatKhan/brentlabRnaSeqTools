@@ -28,6 +28,7 @@ getMetadata = function(api_url, table_vector = c("BioSample", "RnaSample", "S1cd
   return(combined_df)
 }
 
+#' @export
 joinTables = function(tablename, api_url){
   tmp_dir = tempdir()
   tmp <- paste(tmp_dir, paste0(tablename, ".json"), sep="/")
