@@ -107,7 +107,7 @@ plot(hist)
 
 ### create tally
 ```{r, include = FALSE}
-induction_set_tally = createInductionSetTally(induction_set, passing_qc1_induction_set, iqr_fltr_rle_summary, grant_df)
+induction_set_tally = createInductionSetTally(induction_set, sorted_passing_induction_meta_qual, iqr_fltr_rle_summary, grant_df)
 write_csv(induction_set_tally, "~/code/brentlab/induction_experiment_table/data/genotype_tally.csv")
 ```
 ### parse replicate sets out for the website table
