@@ -1,0 +1,56 @@
+---
+title: "yeast_timecourse_qc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{yeast_timecourse_qc}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(brentlabRnaSeqTools)
+```
+
+```{r}
+# you can use this codeblock to read in the raw counts by reading in all of the raw count files from your align_count directory. Note: if you have both yeast and crypto raw counts, there will be some issues you'll need to address here. If you have only one organism in your align_counts_results dir, this works directly
+
+# username = "jplaggenberg"
+# path_list = Sys.glob(paste0("/mnt/htcf_scratch/",username, "/rnaseq_pipeline/align_count_results/*/*raw*"))
+# df_list = lapply(path_list, read_csv)
+# gene_id = df_list[[1]]$gene_id
+# df_list = lapply(df_list, function(x) select(x, -gene_id))
+# 
+# raw_counts = bind_cols(df_list)
+
+# I added these counts as sample data for demonstration purposes. you can use cst6_sample_raw_counts with the cst6_sample_metadata
+```
+#NOTE: I added cst6 sample data as stored data in this module. If you want to examine different samples, you'd simply read in the metadata with read_csv
+```{r}
+# remove suffixes from the sample identifiers
+colnames(cst6_sample_raw_counts) = str_remove(colnames(cst6_sample_raw_counts), "_read_count.tsv")
+cst6_sample_metadata$fastqFileName = str_remove(cst6_sample_metadata$fastqFileName, ".fastq.gz")
+```
+
+
+```{r}
+# note: I added cst6 sample data as stored data in this module. If you want to examine different samples, you'd simply read in the metadata with read_csv
+
+# ensure that the row/column order is the same
+raw_counts_cst6_sample = raw_counts[, cst6_sample_metadata$fastqFileName]
+
+all.true(colnames(raw_counts_cst6_sample), cst6_sample_metadata$fastqFileName)
+
+```
+
+```{r}
+dds = DESeqDataSetFromMatrix(coldata = cst6_sample_metadata, countData = raw_counts_cst6_sample, design=~timePoint, treatment)
+```
+
+
