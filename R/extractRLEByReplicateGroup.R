@@ -27,6 +27,8 @@ extractRLEByReplicateGroup_90minInduction = function(meta_qual_df, norm_counts, 
     # filter out known strain/geno problems
     genotype_filtered_df = meta_qual_df %>% filter(GENOTYPE == genotype)
 
+    other_cond_str = 'OTHER_CONDITIONS'
+
       if(protocol_selector){
         replicate_split_meta_qual_list = split(genotype_filtered_df, f = list(genotype_filtered_df$MEDIUM, genotype_filtered_df$TEMPERATURE, genotype_filtered_df$ATMOSPHERE, genotype_filtered_df$TREATMENT, genotype_filtered_df$OTHERCONDITIONS, genotype_filtered_df$TIMEPOINT, genotype_filtered_df$LIBRARYPROTOCOL))
       } else {
@@ -89,7 +91,7 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
         temperature = as.character(unique(split_df$TEMPERATURE))
         atmosphere = as.character(unique(split_df$ATMOSPHERE))
         treatment = as.character(unique(split_df$TREATMENT))
-        other_conditions = as.character(unique(split_df$OTHER_CONDITIONS))
+        other_conditions = as.character(unique(split_df$OTHERCONDITIONS))
         timepoint = as.character(unique(split_df$TIMEPOINT))
         protocol = as.character(unique(split_df$LIBRARYPROTOCOL))
 
@@ -99,7 +101,7 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
-          fltr_rle_full = createFullRLETableAlreadyLogged(ftlr_norm_counts)
+          fltr_rle_full = createFullRLETable(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)

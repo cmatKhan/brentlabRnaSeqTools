@@ -1,0 +1,283 @@
+---
+title: "nat_unexpected"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{nat_unexpected}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(brentlabRnaSeqTools)
+library(edgeR)
+```
+
+```{r}
+# NOTE: api_url is an environmental variable of the package that stores the current url to the crypto database api
+combined_df = getMetadata(api_url)
+```
+
+get wildtype
+```{r}
+
+# wt_df = combined_df %>% filter(genotype1 == 'CNAG_00000', libraryProtocol == 'E7420L', autoAudit == FALSE | autoAudit == 0, experimentDesign == 'Environmental_Perturbation', medium == 'PBS', temperature=='30.00', purpose=='fullRNASeq')
+# 
+# wt_samples = sample_n(wt_df, 10, seed=1)
+# wt_samples$condition = 'wt' 
+```
+
+```{r}
+# run_4717 = combined_df %>% filter(runNumber == '4717')
+# run_4717$condition = 'perturbed'
+# run_4717_with_wt = bind_rows(run_4717, wt_samples)
+# 
+# run_4790 = combined_df %>% filter(runNumber == '4790')
+# run_4790$condition = 'perturbed'
+# run_4790_with_wt = bind_rows(run_4790, wt_samples)
+
+```
+
+```{r, include=FALSE}
+# write_csv(run_4717_with_wt, "/mnt/htcf_scratch/chasem/rnaseq_pipeline/query/run_4717_with_wt.csv")
+# write_csv(run_4790_with_wt, "/mnt/htcf_scratch/chasem/rnaseq_pipeline/query/run_4790_with_wt.csv")
+run_4717_with_wt = read_csv("/mnt/htcf_scratch/chasem/rnaseq_pipeline/query/run_4717_with_wt.csv")
+run_4790_with_wt = read_csv("/mnt/htcf_scratch/chasem/rnaseq_pipeline/query/run_4790_with_wt.csv")
+# raw_counts = getRawCounts(api_url)
+
+replaceNaInDataframeColumns = function(df){
+    df = df %>% dplyr::mutate(treatment = replace_na(treatment, 'noTreatment'))
+  df = df %>% dplyr::mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions'))
+  df = df %>% dplyr::mutate(medium = replace_na(medium, 'noMedium'))
+  df = df %>% dplyr::mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere'))
+  df = df %>% dplyr::mutate(temperature = replace_na(temperature, 'noTemperature'))
+  df = df %>% dplyr::mutate(timePoint = replace_na(timePoint, 'noTimepoint'))
+  df = df %>% dplyr::mutate(treatmentConc = replace_na(treatmentConc, 'noTreatmentConc'))
+  df = df %>% dplyr::mutate(autoAudit = replace_na(autoAudit, 'noAutoAudit'))
+  df = df %>% dplyr::mutate(manualAudit = replace_na(manualAudit, 'noManualAudit'))
+  return(df)
+}
+
+run_4717_with_wt = replaceNaInDataframeColumns(run_4717_with_wt)
+run_4790_with_wt = replaceNaInDataframeColumns(run_4790_with_wt)
+combined_df = replaceNaInDataframeColumns(combined_df)
+```
+
+```{r, include=FALSE}
+proc_set_raw = read_csv('/mnt/htcf_scratch/chasem/rnaseq_pipeline/lts_align_expr/processed_set_20201019_raw_counts.csv')
+colnames(proc_set_raw) = str_remove(colnames(proc_set_raw), "_read_count.tsv")
+
+gene_id = proc_set_raw$gene_id[1:6967]
+
+full_combined = combined_df %>% filter(purpose == 'fullRNASeq')
+
+proc_set_raw = getRawCounts(api_url)
+colnames(proc_set_raw) = str_remove(colnames(proc_set_raw), "_read_count.tsv")
+
+proc_set_raw = proc_set_raw[colnames(proc_set_raw) %in% str_remove(full_combined$fastqFileName, ".fastq.gz")]
+
+proc_set_raw = proc_set_raw[!colnames(proc_set_raw) %in% colnames(proc_set_raw)[colSums(proc_set_raw) == 0]]
+
+proc_set_raw = proc_set_raw[1:6967, ]
+
+proc_set_raw = proc_set_raw[!colnames(proc_set_raw) %in% colnames(proc_set_raw)[colSums(proc_set_raw) == 0]]
+
+dge_list = DGEList(proc_set_raw)
+
+proc_set_log2_cpm = cpm(dge_list, log=TRUE)
+```
+
+```{r, include=FALSE}
+log2cpm_path_list = Sys.glob("/mnt/htcf_scratch/chasem/rnaseq_pipeline/align_count_results/*/*cpm*")
+
+# read qual_assess_1 as list of dataframes
+log2cpm_df_list =  lapply(log2cpm_path_list, read_csv)
+
+log2cpm_df_list = lapply(log2cpm_df_list, function(x) select(x, -gene_id))
+
+# concat together
+#log2cpm_df = Reduce(dplyr::full_join, log2cpm_df_list)
+log2cpm_df = bind_cols(log2cpm_df_list)
+log2cpm_df = log2cpm_df[1:6967,]
+log2cpm_df$gene_id = gene_id
+
+# remove ncRNA and markers
+protein_coding_fltr_log2cpm_df = log2cpm_df %>% filter(startsWith(gene_id, "CKF44"))
+
+colnames(protein_coding_fltr_log2cpm_df) = str_remove(colnames(protein_coding_fltr_log2cpm_df), "_read_count.tsv")
+colnames(protein_coding_fltr_log2cpm_df) = str_remove(colnames(protein_coding_fltr_log2cpm_df), "_read_count.tsv")
+
+wt_samples = run_4717_with_wt %>% filter(condition == 'wt')
+
+log2cpm_df[!colnames(log2cpm_df) %in% wt_samples$fastqFileName]
+
+perturbed_log2cpm_df = log2cpm_df[1:6967, ]
+colnames(perturbed_log2cpm_df) = str_remove(colnames(perturbed_log2cpm_df), "_read_count.tsv")
+
+proc_set_log2_cpm = cbind(proc_set_log2_cpm, log2cpm_df[colnames(log2cpm_df) %in% wt_samples$fastqFileName])
+
+```
+
+```{r}
+replicateGroupSplit = function(run_df_meta){
+  perturbed_master = run_df_meta %>% filter(condition=='perturbed')
+  perturbed_master$fastqFileName = str_remove(perturbed_master$fastqFileName, ".fastq.gz")
+  
+  split_df_list = split(perturbed_master, f = list(perturbed_master$medium, perturbed_master$temperature, perturbed_master$timePoint, perturbed_master$atmosphere, perturbed_master$treatment, perturbed_master$treatmentConc))
+  
+  length_df = lapply(split_df_list, nrow)
+  fltr_split_df = split_df_list[length_df !=0]
+  
+  return (fltr_split_df)
+}
+run_4717_split = replicateGroupSplit(run_4717_with_wt)
+
+run_4790_only_fail = run_4790_with_wt %>% filter(experimentDesign == "Environmental_Perturbation", autoAudit==TRUE, autoStatusDecomp == '[4.0]')
+
+run_4790_split = replicateGroupSplit(run_4790_only_fail)
+```
+
+```{r}
+lookForPerturbed = function(perturbed_df_by_replicate_group, combined_df, proc_set_log2_cpm, perturbed_log2cpm_df, gene_id){
+  # get reference log2_cpm
+ref_medium = unique(perturbed_df_by_replicate_group$medium)
+ref_temperature = unique(perturbed_df_by_replicate_group$temperature)
+ref_atmosphere = unique(perturbed_df_by_replicate_group$atmosphere)
+ref_timePoint = unique(perturbed_df_by_replicate_group$timePoint)
+ref_treatment = unique(perturbed_df_by_replicate_group$treatment)
+ref_treatmentConc = unique(perturbed_df_by_replicate_group$treatmentConc)
+# 
+# # DO THIS MANUALLY
+ref_temperature = paste0(ref_temperature, '.00')
+ref_treatmentConc = paste0(ref_treatmentConc, '.000')
+
+ref_samples = combined_df %>% filter(experimentDesign == 'Environmental_Perturbation', genotype1=="CNAG_00000", medium == ref_medium, temperature == ref_temperature, atmosphere == ref_atmosphere, timePoint == ref_timePoint, treatment == ref_treatment, treatmentConc == ref_treatmentConc, purpose=='fullRNASeq')
+
+# ref_samples = combined_df %>% filter(experimentDesign == 'Environmental_Perturbation', genotype1=="CNAG_00000", medium == ref_medium, temperature == ref_temperature, atmosphere == ref_atmosphere, timePoint == ref_timePoint, purpose=='fullRNASeq')
+
+ref_samples$fastqFileName = str_remove(ref_samples$fastqFileName, '.fastq.gz')
+
+ref_log2cpm = proc_set_log2_cpm[colnames(proc_set_log2_cpm) %in% ref_samples$fastqFileName]
+
+perturbed_log2cpm = as.data.frame(perturbed_log2cpm_df[, perturbed_df_by_replicate_group$fastqFileName])
+
+perturbed_log2cpm_med = apply(perturbed_log2cpm, 1, median, na.rm=TRUE)
+
+ref_med = apply(ref_log2cpm, 1, median, na.rm=TRUE)
+
+log2_med_diff = perturbed_log2cpm_med - ref_med
+
+names(ref_med) = as.character(gene_id)
+names(perturbed_log2cpm_med) = as.character(gene_id)
+names(log2_med_diff) = as.character(gene_id)
+
+pert_genotypes = combined_df %>% filter(genotype1 != 'CNAG_00000')
+pert_genotypes = unique(pert_genotypes$genotype1)
+pert_genotypes = str_replace(pert_genotypes, "CNAG", "CKF44")
+
+x = sort(log2_med_diff[pert_genotypes])
+
+candidates = names(x[1:20])
+candidate_df = tibble(genotype = candidates, change = x[1:20], perturbed_expr = perturbed_log2cpm_med[candidates], wt_expr = ref_med[candidates])
+
+return(candidate_df)
+}
+
+# all_df_list_4717 = lapply(fltr_split_df, function(x) lookForPerturbed(x, combined_df, proc_set_log2_cpm, perturbed_log2cpm_df, gene_id))
+
+all_df_list_4790 = lapply(run_4790_split, function(x) lookForPerturbed(x, combined_df, proc_set_log2_cpm, perturbed_log2cpm_df, gene_id))
+```
+
+```{r}
+cnag_03894_perturbed = lapply(all_df_list_4717, function(x) as.numeric(x[which(x$genotype=="CKF44_03894" ), "perturbed_expr"]) )
+cnag_03894_control = lapply(all_df_list_4717, function(x) as.numeric(x[which(x$genotype=="CKF44_03894" ), "wt_expr"]) )
+
+df = tibble(conditions = names(cnag_03894_perturbed), perturbed = cnag_03894_perturbed, control = cnag_03894_control)
+
+ggplot() +
+  geom_point(data = df, aes(x = conditions, y = as.numeric(perturbed))) +
+  geom_point(data = df, aes(conditions, as.numeric(control)), color='blue')
+
+```
+```{r}
+run_4790_all_sorted = lapply(all_df_list_4790, function(x) arrange(x, perturbed_expr, genotype) )
+run_4790_all_sorted_top_gene = lapply(run_4790_all_sorted, function(x) x[1,])
+
+df = bind_rows(run_4790_all_sorted_top_gene)
+
+conditions_df = tibble(conditions=names(run_4790_all_sorted_top_gene))
+
+df = bind_cols(df, conditions_df)
+
+```
+
+
+
+```{r}
+run_4717_with_wt$fastqFileName = str_remove(run_4717_with_wt$fastqFileName, '.fastq.gz')
+run_4790_with_wt$fastqFileName = str_remove(run_4790_with_wt$fastqFileName, '.fastq.gz')
+run_4717_counts = protein_coding_fltr_raw_count[, run_4717_with_wt$fastqFileName]
+run_4790_counts = protein_coding_fltr_raw_count[, run_4790_with_wt$fastqFileName]
+```
+
+```{r}
+all.equal(colnames(run_4717_counts), run_4717_with_wt$fastqFileName)
+```
+
+```{r}
+all.equal(colnames(run_4790_counts), run_4790_with_wt$fastqFileName)
+```
+
+
+```{r}
+dds_4717 = DESeqDataSetFromMatrix(colData = run_4717_with_wt, countData = run_4717_counts, design=~condition)
+dds_4790 = DESeqDataSetFromMatrix(colData = run_4790_with_wt, countData = run_4790_counts, design=~condition)
+```
+```{r}
+dds_4717= DESeq(dds_4717)
+res = results(dds_4717)
+res_df = as.data.frame(res)
+
+rownames(res_df) = gene_id[1:6967]
+
+pert_genotypes = combined_df %>% filter(genotype1 != 'CNAG_00000')
+pert_genotypes = unique(pert_genotypes$genotype1)
+pert_genotypes = str_replace(pert_genotypes, "CNAG", "CKF44")
+
+res_for_pert_genotypes = res_df[rownames(res_df) %in% pert_genotypes, ]
+```
+
+```{r}
+dds_4790= DESeq(dds_4790)
+res_4790 = results(dds_4790)
+res_4790_df = as.data.frame(res)
+
+rownames(res_4790_df) = gene_id[1:6967]
+
+res_4790_for_pert_genotypes = res_4790_df[rownames(res_4790_df) %in% pert_genotypes, ]
+
+# rownames(res_df) = gene_id[1:6967]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

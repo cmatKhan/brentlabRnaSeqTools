@@ -1,0 +1,212 @@
+---
+title: "environmental_perturbation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{environmental_perturbation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(brentlabRnaSeqTools)
+```
+
+```{r}
+combined_df = getMetadata(api_url)
+env_pert_set = createEnvPertSet(combined_df)
+```
+
+```{r}
+df = env_pert_set %>% filter(grepl('4|6', AUTOSTATUSDECOMP))
+df$AUTOSTATUSDECOMP = as.factor(df$AUTOSTATUSDECOMP)
+
+
+ggplot(df) +
+  geom_point(aes(LIBRARYDATE, AUTOSTATUSDECOMP))
+  
+```
+
+
+### runs not in the 'old' tally
+```{r}
+View(env_pert_set %>% filter(RUNNUMBER == '4717') %>% select(AUTOAUDIT, AUTOSTATUS, AUTOSTATUSDECOMP))
+View(env_pert_set %>% filter(RUNNUMBER == '4815') %>% select(AUTOAUDIT, AUTOSTATUS, AUTOSTATUSDECOMP))
+View(env_pert_set %>% filter(RUNNUMBER == '4689') %>% select(AUTOAUDIT, AUTOSTATUS, AUTOSTATUSDECOMP))
+View(env_pert_set %>% filter(RUNNUMBER == '4790') %>% select(AUTOAUDIT, AUTOSTATUS, AUTOSTATUSDECOMP))
+```
+
+```{r}
+
+qc1_passing_env_pert_meta_qual_df = qualityAssessmentFilter(env_pert_set)
+qc1_passing_env_pert_meta_qual_df$FASTQFILENAME = str_remove(qc1_passing_env_pert_meta_qual_df$FASTQFILENAME, ".fastq.gz")
+
+```
+
+```{r}
+raw_counts_df = getRawCounts(api_url)
+```
+
+get norm counts
+```{r}
+librarydate_model_matrix = model.matrix(~LIBRARYDATE, qc1_passing_env_pert_meta_qual_df)
+rownames(librarydate_model_matrix) = qc1_passing_env_pert_meta_qual_df$FASTQFILENAME
+
+qc1_passing_env_pert_counts = raw_counts_df[, qc1_passing_env_pert_meta_qual_df$FASTQFILENAME]
+
+dds = DESeqDataSetFromMatrix(countData = qc1_passing_env_pert_counts, colData = qc1_passing_env_pert_meta_qual_df, design = librarydate_model_matrix)
+dds = estimateSizeFactors(dds)
+
+all.equal(colnames(qc1_passing_env_pert_counts), qc1_passing_env_pert_meta_qual_df$FASTQFILENAME, rownames(librarydate_model_matrix))
+output_path = "/mnt/htcf_scratch/chasem/rnaseq_pipeline/experiments/env_pert_set_librarydatemodel_20210305.rds"
+write_rds(dds, output_path)
+```
+
+```{r}
+# post DESeq (with librarydate effects)
+env_pert_librarydatemodel = readRDS('env_pert_set_20210126.rds')
+```
+
+```{r}
+norm_counts = counts(dds, normalize=TRUE)
+```
+```{r}
+removed_librarydate_effect_log_norm_counts = removeParameterEffects(env_pert_librarydatemodel, librarydate_model_matrix) # NOTE: INCLUDES LIBRARYPROTOCOL
+```
+
+```{r, include=FALSE}
+norm_output = "/home/chase/projects/brentlab/daily_work/20210214_env_pert_tally_with_database/rle/norm_counts"
+extractRLEByReplicateGroup_EnvPert(qc1_passing_env_pert_meta_qual_df, norm_counts, norm_output, protocol_selector = FALSE, already_logged_flag = FALSE)
+createRLEPlotsByReplicateGroup_envPert(norm_output, qc1_passing_env_pert_meta_qual_df)
+
+# removed_effect_output = "librarydate_effect_removed"
+# extractRLEByReplicateGroup_EnvPert(sorted_passing_meta_qual, removed_librarydate_effect_log_norm_counts, removed_effect_output, protocol_selector = FALSE, already_logged_flag = TRUE)
+# createRLEPlotsByReplicateGroup_envPert(removed_effect_output, sorted_passing_meta_qual)
+```
+
+```{r, include=FALSE}
+
+# induction_samples_meta_qual_df$GENOTYPE = paste(induction_samples_meta_qual_df$GENOTYPE1,induction_samples_meta_qual_df$GENOTYPE2, sep="." )
+# induction_samples_meta_qual_df$GENOTYPE = str_remove(induction_samples_meta_qual_df$GENOTYPE, "\\.NA$")
+
+norm_counts_rle_summary_list = Sys.glob("norm_counts_rle/*summary*")
+norm_counts_rle_summary_df_list = lapply(norm_counts_rle_summary_list, read_csv)
+norm_counts_rle_summary = bind_rows(norm_counts_rle_summary_df_list)
+
+norm_counts_rle_summary = left_join(norm_counts_rle_summary, sorted_passing_meta_qual, on="FASTQFILENAME")
+
+removed_effect_rle_summary_list = Sys.glob("librarydate_effect_removed/*summary*")
+removed_effect_rle_summary_df_list = lapply(removed_effect_rle_summary_list, read_csv)
+
+removed_effect_rle_summary = bind_rows(removed_effect_rle_summary_df_list)
+
+removed_effect_rle_summary = left_join(removed_effect_rle_summary, sorted_passing_meta_qual, on="FASTQFILENAME")
+
+# write_csv(norm_counts_rle_summary, "./env_pert_rle_vis/vis/data/norm_counts_rle_summary_20210127.csv")
+# write_csv(removed_effect_rle_summary, "./env_pert_rle_vis/vis//data/librarydate_effect_removed_counts_rle_summary_20210127.csv")
+
+```
+
+```{r}
+# pdf("env_pert_iqr_hist_20210127.pdf")
+plotRLE_bar_iqr = function(rle_summary_df, title){
+  x =ggplot(rle_summary_df, aes(INTERQUARTILE_RANGE))+
+    geom_histogram(bins=100)+ggtitle(title)+
+    scale_x_continuous(breaks = seq(0, 2, by = .05))
+  # dev.off()
+  return(x)
+}
+
+hist = plotRLE_bar_iqr(removed_effect_rle_summary, "iqr")
+
+# pdf("env_pert_iqr_hist_20210127.pdf", width = 12)
+# plot(hist)
+# dev.off()
+```
+
+```{r}
+iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE<.675)
+# write_csv(iqr_fltr_rle_summary, 'env_pert_iqr_fltr_meta_qual_20210130.csv')
+# write_csv(env_pert_raw_counts_df[,iqr_fltr_rle_summary$FASTQFILENAME], 'env_pert_iqr_fltr_raw_counts_20210130.csv')
+```
+
+TODO:
+
+also make fail reason by libraryPreprarer graph
+
+yes, and the tally fills right. You're right that is confusing since it makes it look like a set with less than 3 replicates in QC1 passes the IQR in the next column
+11:37
+I should probably just add a 4th tally column
+11:37
+for "current total"
+
+That makes sense. Maybe if fewer than 3 pass QC1, put a null/NA or 0 in the IQR column, and then have that current total column
+
+```{r}
+
+unfiltered_tally_env_pert = env_pert_meta_qual_df %>% group_by(MEDIUM, ATMOSPHERE, TEMPERATURE, TIMEPOINT, TREATMENT, OTHERCONDITIONS) %>% tally() %>% mutate(unfiltered_tally = n ) %>% select(-n)
+
+passing_qc1_tally_env_pert = sorted_passing_meta_qual %>% group_by(MEDIUM, ATMOSPHERE, TEMPERATURE, TIMEPOINT, TREATMENT, OTHERCONDITIONS) %>% tally() %>% mutate(qc1_passing_tally = n ) %>% select(-n)
+
+# iqr_filter_passing_qc1_tally_env_pert = iqr_fltr_rle_summary %>% group_by(MEDIUM, ATMOSPHERE, TEMPERATURE, TIMEPOINT, TREATMENT, OTHER_CONDITIONS) %>% tally() %>% mutate(iqr_filter_qc1_passing_tally = n )%>% select(-n)
+
+env_pert_tally = unfiltered_tally_env_pert %>%
+  left_join(passing_qc1_tally_env_pert) %>%
+  left_join(iqr_filter_passing_qc1_tally_env_pert) %>%
+  # mutate(iqr_filter_qc1_passing_tally = coalesce(iqr_filter_qc1_passing_tally, qc1_passing_tally)) %>% 
+  dplyr::mutate(qc1_passing_tally = replace_na(qc1_passing_tally, 0)) %>% 
+  # dplyr::mutate(iqr_filter_qc1_passing_tally = replace_na(iqr_filter_qc1_passing_tally, 0))
+
+# write_csv(env_pert_tally, 'env_pert_tally_20210129.csv')
+
+```
+
+also make fail reason by libraryPreprarer graph
+
+```{r}
+fail_by_preparer = env_pert_meta_qual_df %>%
+  ggplot() +
+  geom_bar(aes(STATUS_DECOMP)) +
+  facet_wrap("LIBRARYPREPARER")
+
+fail_by_preparer
+```
+
+Correlation between IQR and other QC metrics
+```{r}
+
+qc_metric_list = colnames(env_pert_meta_qual_df)[64:92]
+
+for (qc_metric in qc_metric_list) {
+  scatterplot = removed_effect_rle_summary %>%
+    ggplot() +
+    geom_point(aes(!! rlang::sym(qc_metric), INTERQUARTILE_RANGE))
+  
+  plot(scatterplot)
+}
+
+```
+
+```{r}
+qc_metric_list = colnames(env_pert_meta_qual_df)[64:92]
+
+for (qc_metric in qc_metric_list) {
+  scatterplot = removed_effect_rle_summary %>%
+    ggplot() +
+    geom_point(aes(!! rlang::sym(qc_metric), ABS_SAMPLE_DEVIATION_MEDIAN))
+  
+  plot(scatterplot)
+}
+```
+TODO: get x most decreased genes. use deseq on CDS counts
+```{r}
+y =as.numeric(env_set_0_1_fltr$NOFEATUREPERCENT)[as.numeric(env_set_0_1_fltr$NOFEATUREPERCENT) < 1]
+df = env_pert_set %>% filter(grepl("4.0", AUTOSTATUSDECOMP)) %>% group_by(LIBRARYDATE, LIBRARYPREPARER) %>% tally()
+```
+
