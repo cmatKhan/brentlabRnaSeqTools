@@ -19,47 +19,49 @@ library(brentlabRnaSeqTools)
 library(scales)
 ```
 
+# NOTE: the data needed to run this notebook verbatim comes packaged and ready to use. I include the codeblock below as an example of how to get other similar data from the cluster into R
+
 ```{r, include=FALSE}
 # you can use this codeblock to read in the raw counts by reading in all of the raw count files from your align_count directory. Note: if you have both yeast and crypto raw counts, there will be some issues you'll need to address here. If you have only one organism in your align_counts_results dir, this works directly
 
-# get counts by collating the run count output
-username = "chasem"
-path_list = Sys.glob(paste0("/mnt/htcf_scratch/",username, "/rnaseq_pipeline/align_count_results/*/*raw*"))
-df_list = lapply(path_list, read_csv)
-# the following is in genome_files -- it is in your rnaseq_pipeline directory
-gene_id_path = '/home/chase/Desktop/rnaseq_pipeline/rnaseq_pipeline/genome_files/S288C_R64/S288C_R64_gids'
-gene_id_col = read_csv(gene_id_path, col_names = "gene_id")
-df_list = lapply(df_list, function(x) select(x, -gene_id))
-
-raw_counts = bind_cols(df_list)
-
-# get metadata from the sheet used to create the align_count_results output
-sample_metadata_csv = "cst6_sample_data.csv"
-sample_metadata = read_csv(paste0("/mnt/htcf_scratch/",username, "/rnaseq_pipeline/query/", sample_metadata_csv))
+# # get counts by collating the run count output
+# username = "chasem"
+# path_list = Sys.glob(paste0("/mnt/htcf_scratch/",username, "/rnaseq_pipeline/align_count_results/*/*raw*"))
+# df_list = lapply(path_list, read_csv)
+# # the following is in genome_files -- it is in your rnaseq_pipeline directory
+# gene_id_path = '/home/chase/Desktop/rnaseq_pipeline/rnaseq_pipeline/genome_files/S288C_R64/S288C_R64_gids'
+# yeast_gene_id_column = read_csv(gene_id_path, col_names = "gene_id")
+# df_list = lapply(df_list, function(x) select(x, -gene_id))
+# 
+# cst6_raw_counts = bind_cols(df_list)
+# 
+# # get metadata from the sheet used to create the align_count_results output
+# sample_metadata_csv = "cst6_sample_data.csv"
+# cst6_sample_metadata = read_csv(paste0("/mnt/htcf_scratch/",username, "/rnaseq_pipeline/query/", sample_metadata_csv))
 
 ```
-#NOTE: I added cst6 sample data as stored data in this module. If you want to examine different samples, you'd simply read in the metadata with read_csv
+
 ```{r}
 # remove suffixes from the sample identifiers
-colnames(raw_counts) = str_remove(colnames(raw_counts), "_read_count.tsv")
+colnames(cst6_raw_counts) = str_remove(colnames(cst6_raw_counts), "_read_count.tsv")
 # remove suffix from fastqFileName col
-sample_metadata$fastqFileName = str_remove(sample_metadata$fastqFileName, ".fastq.gz")
+cst6_sample_metadata$fastqFileName = str_remove(cst6_sample_metadata$fastqFileName, ".fastq.gz")
 ```
 
 
 ```{r}
 # note: I added cst6 sample data as stored data in this module. If you want to examine different samples, you'd simply read in the metadata with read_csv
 
-# ensure that the row/column order is the same
-sample_raw_counts = raw_counts[, sample_metadata$fastqFileName]
+# this is also technically unnecessary in this case, but included as an example of how to filter the counts down to just the samples in the metadata.
+cst6_raw_counts = cst6_raw_counts[, cst6_sample_metadata$fastqFileName]
 
 # check to ensure that the raw counts columns are in the same order as the metadata rows
-all.equal(colnames(sample_raw_counts), sample_metadata$fastqFileName)
+all.equal(colnames(cst6_raw_counts), cst6_sample_metadata$fastqFileName)
 
 ```
 
 ```{r}
-dds = DESeqDataSetFromMatrix(colData = sample_metadata, countData = sample_raw_counts, design=~timePoint+treatment)
+dds = DESeqDataSetFromMatrix(colData = cst6_sample_metadata, countData = cst6_raw_counts, design=~timePoint+treatment)
 ```
 
 ```{r}
@@ -67,34 +69,14 @@ dds = DESeqDataSetFromMatrix(colData = sample_metadata, countData = sample_raw_c
 deseq_obj = DESeq(dds)
 ```
 ```{r}
-sample_norm_counts = counts(deseq_obj, normalized=TRUE)
-rownames(sample_norm_counts) = gene_id_col$gene_id
+cst6_norm_counts = counts(deseq_obj, normalized=TRUE)
+rownames(cst6_norm_counts) = yeast_gene_id_column$gene_id
 ```
 
 ```{r}
-#' metadata_df has lowercase columns of standard format from database
-#' norm_counts MUST have rownames assigned to the gene_ids includes at least all samples in metadata
-#' metadata$fastqFileName is equal in format to colnames(raw_counts)
-graphTimeCourse = function(metadata_df, genotype_1, gene_id, norm_counts){
-  fltr_metadata = metadata_df %>% filter(genotype1 == genotype_1)
-
-  norm_count_long_df = tibble(fastqFileName = fltr_metadata$fastqFileName, norm_count = norm_counts[gene_id, fltr_metadata$fastqFileName])
-  
-  timecourse_graph = norm_count_long_df %>% 
-    left_join(metadata_df) %>%
-      ggplot(aes(timePoint, norm_count, color=treatment))+
-      geom_line(aes(group=interaction(libraryDate, treatment, replicate)))+
-      geom_point()+
-      scale_y_continuous(trans = log2_trans(),
-                         breaks = trans_breaks("log2", function(x) 2^x),
-                         labels = trans_format("log2", math_format(2^.x)))+
-      ggtitle(genotype_1)+
-      facet_wrap(~runNumber+libraryDate)
-    return(timecourse_graph)
-}
 
 # again, note that the sample_norm_counts need rownames assigned to the gene_ids
-x = graphTimeCourse(sample_metadata, 'CST6', 'YIL036W', sample_norm_counts)
+graphYeastTimeCourse(cst6_sample_metadata, 'CST6', 'YIL036W', cst6_norm_counts)
 ```
 
 
