@@ -19,7 +19,7 @@ deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw
   new_protocol_sorted_passing_meta_qual = sorted_passing_meta_qual %>% filter(LIBRARYPROTOCOL == "E7420L")
   new_protocol_sorted_passing_counts = sorted_passing_induction_raw_counts[, new_protocol_sorted_passing_meta_qual$FASTQFILENAME]
 
-  libraryprotocol_librarydate_model_matrix = createLibrarydateModelMatrix(sorted_passing_meta_qual)
+  libraryprotocol_librarydate_model_matrix = createLibraryProtocolLibrarydateModelMatrix(sorted_passing_meta_qual)
 
   old_dds = DESeqDataSetFromMatrix(colData = old_protocol_sorted_passing_meta_qual, countData = old_protocol_sorted_passing_counts, design=~1)
   new_dds = DESeqDataSetFromMatrix(colData = new_protocol_sorted_passing_meta_qual, countData = new_protocol_sorted_passing_counts, design=~1)

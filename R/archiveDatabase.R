@@ -2,13 +2,19 @@
 #'
 #' saves both the individual tables and the combined_df
 #'
-#' @param output_dir where to deposit a subdirectory called something like 20210302 (today's date)
+#' @param output_dir where to deposit a subdirectory, named by todays date in this format: 20210407, with the tables and combined_df inside. eg /lts/mblab/Crypto/rnaseq_data/crypto_database_archive
 #'
 #' @return None, writes a directory called <today's date> with tables and combined_df as .csv to output_dir
 #'
 #' @export
 archiveDatabase = function(output_dir){
-  tablename_vector = c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
+  tablename_vector = c("BioSample",
+                       "RnaSample",
+                       "S1cdnaSample",
+                       "S2cdnaSample",
+                       "Library",
+                       "FastqFiles",
+                       "QualityAssess")
 
   table_vector = lapply(tablename_vector, function(x) joinTables(x, api_url))
 

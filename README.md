@@ -1,3 +1,15 @@
+# TODOs
+ - organize and clean up R scripts package -- similar functions to the same script file (eg rle)
+ - RLE functions need to be cleaned up (for example, use the IQR function)
+ - use tidymodels to create models for the QC metrics/set thresholds -- make this into a dashboard
+ - remove packages from 'depends' and add to imports. import packages when needed in scripts/notebooks
+ - read more about packrat, add some instructions on how to use
+ - add the database interaction functions here -- see brentlabPythonUtils database interaction. Ideally, do this with the DB packages (will need to wait until the rnaseq databases are in postgresql)
+ - update R and dependencies to R version 4
+ - add tests
+ - add CI
+ - nightly builds
+
 # brentlabRnaSeqTools
 
 This is a very helpful tutorial on making an R package:  

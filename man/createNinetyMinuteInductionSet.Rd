@@ -2,7 +2,7 @@
 % Please edit documentation in R/createNinetyMinuteInductionSet.R
 \name{createNinetyMinuteInductionSet}
 \alias{createNinetyMinuteInductionSet}
-\title{The current definition of the 90 minute induction dataset}
+\title{The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single KO only}
 \usage{
 createNinetyMinuteInductionSet(metadata, grant_df)
 }
@@ -12,8 +12,8 @@ createNinetyMinuteInductionSet(metadata, grant_df)
 \item{grant_df}{is the 2016 grant summary TODO: put this in DATA}
 }
 \value{
-the 90minuteInduction metadata
+the set metadata -- single KO only
 }
 \description{
-The current definition of the 90 minute induction dataset
+The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single KO only
 }

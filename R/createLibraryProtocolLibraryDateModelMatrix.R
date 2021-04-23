@@ -4,7 +4,7 @@
 #' @return a model matrix constructed as specified in the description
 #'
 #' @export
-createLibrarydateModelMatrix = function(metadata_df){
+createLibraryProtocolLibrarydateModelMatrix = function(metadata_df){
   colnames(metadata_df) = toupper(colnames(metadata_df))
   # cast librarydate to datetime object
   metadata_df$LIBRARYDATE = as.Date(metadata_df$LIBRARYDATE)

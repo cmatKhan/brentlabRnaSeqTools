@@ -27,7 +27,7 @@ extractRLEByReplicateGroup_90minInduction = function(meta_qual_df, norm_counts, 
     # filter out known strain/geno problems
     genotype_filtered_df = meta_qual_df %>% filter(GENOTYPE == genotype)
 
-    other_cond_str = 'OTHER_CONDITIONS'
+    other_cond_str = 'OTHERCONDITIONS'
 
       if(protocol_selector){
         replicate_split_meta_qual_list = split(genotype_filtered_df, f = list(genotype_filtered_df$MEDIUM, genotype_filtered_df$TEMPERATURE, genotype_filtered_df$ATMOSPHERE, genotype_filtered_df$TREATMENT, genotype_filtered_df$OTHERCONDITIONS, genotype_filtered_df$TIMEPOINT, genotype_filtered_df$LIBRARYPROTOCOL))
