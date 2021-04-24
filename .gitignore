@@ -11,3 +11,4 @@ inst/doc
 scratch/*
 personal_eda
 *_cache
+packrat/bundles/
