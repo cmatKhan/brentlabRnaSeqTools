@@ -1,3 +1,6 @@
+This is the featureCounts/subreads homepage. In particular, has a good example of how to make mean/variance graph with voom
+http://bioinf.wehi.edu.au/RNAseqCaseStudy/
+
 # TODOs
  - organize and clean up R scripts package -- similar functions to the same script file (eg rle)
  - RLE functions need to be cleaned up (for example, use the IQR function)

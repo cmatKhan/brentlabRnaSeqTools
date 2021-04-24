@@ -7,7 +7,7 @@
 archiveDatabase(output_dir)
 }
 \arguments{
-\item{output_dir}{where to deposit a subdirectory called something like 20210302 (today's date)}
+\item{output_dir}{where to deposit a subdirectory, named by todays date in this format: 20210407, with the tables and combined_df inside. eg /lts/mblab/Crypto/rnaseq_data/crypto_database_archive}
 }
 \value{
 None, writes a directory called <today's date> with tables and combined_df as .csv to output_dir

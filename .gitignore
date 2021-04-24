@@ -9,3 +9,5 @@ packrat/lib*/
 packrat/src/
 inst/doc
 scratch/*
+personal_eda
+*_cache
