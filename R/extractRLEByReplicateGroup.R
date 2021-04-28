@@ -80,7 +80,7 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
 
   dir.create(output_dirpath)
 
-  x = split(df, f = list(df$MEDIUM, df$TEMPERATURE, df$ATMOSPHERE, df$TREATMENT, df$OTHER_CONDITIONS, df$TIMEPOINT))
+  x = split(df, f = list(df$MEDIUM, df$TEMPERATURE, df$ATMOSPHERE, df$TREATMENT, df$OTHER_CONDITIONS, df$TIMEPOINT, df$TREATMENT, df$TREATMENTCONC))
 
   gene_id_col = seq(1,nrow(norm_counts))
   for (split_df in x){
@@ -94,10 +94,12 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
         other_conditions = as.character(unique(split_df$OTHERCONDITIONS))
         timepoint = as.character(unique(split_df$TIMEPOINT))
         protocol = as.character(unique(split_df$LIBRARYPROTOCOL))
+        treatment = as.character(unique(split_df$TREATMENT))
+        treatmentconc = as.character(unique(split_df$TREATMENTCONC))
 
 
-        full_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, "full.csv", sep='_'), sep='/')
-        summary_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, "summary.csv", sep='_'), sep='/')
+        full_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, treatment, treatmentconc, "full.csv", sep='_'), sep='/')
+        summary_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, treatment, treatmentconc, "summary.csv", sep='_'), sep='/')
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
