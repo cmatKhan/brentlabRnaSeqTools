@@ -1,23 +1,17 @@
-#' calculate RLE
-#'
-#' You may pass raw counts or log2 transformed counts with the logged = TRUE argument
+#' calculate RLE of a numeric dataframe
 #'
 #' @param counts_df gene by samples dataframe of raw counts or logged counts (see paramter logged)
-#' @param gene_id_column (Optional) if gene_id_column is not passed, a sequence from 1 to nrow(counts_df) will be used
-#' @param logged (Default FALSE) set to true if log2 transformed counts are passed
-#'
-#' @return rle dataframe with genes x rle statistics
+#' @param logged Default FALSE set to true if log2 transformed counts are passed
+#' @return rle dataframe with genes x samples. Values are the logged differences from the gene-wise medians
 #'
 #' @export
-createFullRLETable = function(counts_df, gene_id_column = NULL, logged = FALSE){
+calculateRLE = function(counts_df, logged = FALSE){
 
-  #if()
+  if(!isNumeric(counts_df)){
+    stop("counts_df must have all numeric columns")
+  }
 
-  # TODO: REMOVE THE GENE_ID ARGUMENT AND JUST REMOVE THE GENE_ID COLUMN IF IT EXISTS
   counts_df = as_tibble(counts_df)
-  counts_df$gene_id = gene_id_column
-
-  counts_df = counts_df %>% select(-gene_id)
 
   if(logged == FALSE){
     # log2 the table (add pseudo count of 1)
@@ -25,19 +19,30 @@ createFullRLETable = function(counts_df, gene_id_column = NULL, logged = FALSE){
   } else{
     log2_counts_df = counts_df
   }
-
   # calculate median expression for each gene across samples
-  all_gene_medians = apply(log2_counts_df, 1, median)
+  gene_wise_medians = apply(log2_counts_df, 1, median)
 
   # calculate deviations from the median
-  rle_table_full = sweep(log2_counts_df, 1, all_gene_medians, '-')
+  rle_table_full = sweep(log2_counts_df, 1, gene_wise_medians, '-')
 
   return(rle_table_full)
 
-} # end createFullRLETable()
+} # end calculateRLE()
 
+#'
+#' calculate medians across rows of dataframe
+#' @param count_df could be any numeric dataframe, but in this context it will typically be a count (raw or log2) df
+#' @return a vector of row-wise medians (length == nrow of input df)
+#'
+#' @export
+calculateGeneWiseMedians = function(count_df){
 
+  # calculate median expression for each gene across samples
+  all_gene_medians = apply(count_df, 1, median)
 
+  return(all_gene_medians)
+
+} # end calculateGeneWiseMedians
 
 #' rleSummary calculates summary statistics of rleFullTable
 #'
@@ -47,67 +52,16 @@ createFullRLETable = function(counts_df, gene_id_column = NULL, logged = FALSE){
 #'
 #' @export
 rleSummary = function(rle_table_full){
+
   # calculate median deviation by sample
   median_deviation_by_sample = apply(rle_table_full, 2, median, na.rm=TRUE)
-
-  # calculate twenty fifth percentile of deviations from median
-  q1 = apply(rle_table_full, 2, quantile, .25, na.rm=TRUE)
-  # ditto seventy fifth
-  q3 = apply(rle_table_full, 2, quantile, .75, na.rm=TRUE)
   # calculate interquartile range
-  iqr = q3 - q1
-  # min/max whisker threshold = q1/3 +/- 1.5*iqr
-  min_whisker_threshold = q1 - 1.5*iqr
-
-  min_whisker_value = c()
-  for (i in seq(1,length(colnames(rle_table_full)))){
-    x = min(rle_table_full[,i][rle_table_full[,i]> min_whisker_threshold[i]])
-    min_whisker_value = c(min_whisker_value,x)
-  }
-
-  max_whisker_threshold = q3 + 1.5*iqr
-  max_whisker_value = c()
-  for (i in seq(1,length(colnames(rle_table_full)))){
-    x = max(rle_table_full[,i][rle_table_full[,i]< max_whisker_threshold[i]])
-    max_whisker_value = c(max_whisker_value,x)
-  }
-  #
-  # inter_whisker_range = max_whisker_value - min_whisker_value
-
-  # num_outliers_below =c()
-  # for (i in seq(1,length(colnames(rle_table_full)))){
-  #   x = length(rle_table_full[,i][rle_table_full[,i] < min_whisker_threshold[i]])
-  #   num_outliers_below = c(num_outliers_below,x)
-  # }
-
-  # most_extreme_below = apply(rle_table_full,2,min)
-  # for (i in seq(1,length(most_extreme_below))){
-  #   if (most_extreme_below[i] >= min_whisker_threshold[i]){
-  #     most_extreme_below[i] = NA
-  #   }
-  # }
-
-  # num_outliers_above =c()
-  # for (i in seq(1,length(colnames(rle_table_full)))){
-  #   x = length(rle_table_full[,i][rle_table_full[,i] > max_whisker_threshold[i]])
-  #   num_outliers_above = c(num_outliers_above,x)
-  # }
-
-  # most_extreme_above = apply(rle_table_full,2,max)
-  # for (i in seq(1,length(most_extreme_above))){
-  #   if (most_extreme_above[i] <= max_whisker_threshold[i]){
-  #     most_extreme_above[i] = NA
-  #   }
-  # }
-
+  iqr = apply(rle_table_full, 2, iqr)
+  # assemble table
   rle_table_summary = tibble(FASTQFILENAME = colnames(rle_table_full),
                              SAMPLE_DEVIATION_MEDIAN = median_deviation_by_sample,
                              ABS_SAMPLE_DEVIATION_MEDIAN = abs(median_deviation_by_sample),
-                             TWENTY_FIVE_QUANTILE = q1,
-                             SEVENTY_FIVE_QUANTILE = q3,
-                             INTERQUARTILE_RANGE = iqr,
-                             MIN_WHISKER = min_whisker_value,
-                             MAX_WHISKER = max_whisker_value)
+                             INTERQUARTILE_RANGE = iqr)
 
   return (rle_table_summary)
 
@@ -125,6 +79,8 @@ rleSummary = function(rle_table_full){
 #'
 #' @export
 extractRLEByReplicateGroup_90minInduction = function(meta_qual_df, norm_counts, output_dirpath, protocol_selector, already_logged_flag){
+
+  #print("CAUTION: split columns MUST BE categorial, and MUST BE factored")
 
   dir.create(output_dirpath)
 
