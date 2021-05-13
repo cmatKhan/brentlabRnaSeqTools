@@ -4,12 +4,13 @@
 #' @return a model matrix constructed as specified in the description
 #'
 #' @export
-createLibraryProtocolLibrarydateModelMatrix = function(metadata_df){
+createNinetyMinInductionModelMatrix = function(metadata_df){
+  wt_genotype = "CNAG_00000"
   colnames(metadata_df) = toupper(colnames(metadata_df))
   # cast librarydate to datetime object
   metadata_df$LIBRARYDATE = as.Date(metadata_df$LIBRARYDATE)
   # create model.frame
-  x = model.frame(~LIBRARYPROTOCOL+LIBRARYDATE, metadata_df)
+  x = model.frame(~LIBRARYPROTOCOL+LIBRARYDATE+GENOTYPE1, metadata_df)
   # x(the model.frame) and metadata are in the same order -- label rows by metadata_df$FASTQFILENAME column
   rownames(x) = metadata_df$FASTQFILENAME
   # extract min old protocol and min new protocol dates
@@ -20,11 +21,13 @@ createLibraryProtocolLibrarydateModelMatrix = function(metadata_df){
   # remove the min_old_protocol_date from the list of unique library dates
   librarydate_columns = unique(as.character(x$LIBRARYDATE))[unique(as.character(x$LIBRARYDATE)) != min_old_protocol_date] # combine these lines with %in%
   librarydate_columns = librarydate_columns[librarydate_columns != min_new_protocol_date]
+  # create genotype columns
+  genotype_columns = unique(as.character(x$GENOTYPE1))[unique(as.character(x$GENOTYPE1)) != wt_genotype]
   # create a model matrix with a column for the intercept, the protocol, and the number of unique library dates - 1
-  model_matrix = matrix(0L, nrow=nrow(x), ncol=length(librarydate_columns)+2)
+  model_matrix = matrix(0L, nrow=nrow(x), ncol=length(librarydate_columns)+2+length(genotype_columns))
   # label rows/columns
   rownames(model_matrix) = rownames(x)
-  colnames(model_matrix) = c("(Intercept)", "LIBRARYPROTOCOL", librarydate_columns)
+  colnames(model_matrix) = c("(Intercept)", "LIBRARYPROTOCOL", librarydate_columns, genotype_columns)
   # set intercept to 1
   model_matrix[,1] = 1
 
@@ -33,12 +36,16 @@ createLibraryProtocolLibrarydateModelMatrix = function(metadata_df){
     fastqfilename = rownames(x)[i]
     librarydate = as.character(x$LIBRARYDATE[i])
     protocol = x$LIBRARYPROTOCOL[i]
+    genotype1 = x$GENOTYPE1[i]
 
     if(protocol == "E7420L"){
       model_matrix[fastqfilename, "LIBRARYPROTOCOL"] = 1
     }
     if(librarydate != min_old_protocol_date & librarydate != min_new_protocol_date){
       model_matrix[fastqfilename, librarydate] = 1
+    }
+    if(genotype1 != wt_genotype){
+      model_matrix[fastqfilename, genotype1] = 1
     }
   }
   return(model_matrix)

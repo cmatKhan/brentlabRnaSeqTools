@@ -12,3 +12,4 @@ scratch/*
 personal_eda
 *_cache
 packrat/bundles/
+data/library_date_size_factor_data.rda

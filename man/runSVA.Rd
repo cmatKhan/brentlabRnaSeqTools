@@ -4,12 +4,12 @@
 \alias{runSVA}
 \title{run SVA}
 \usage{
-runSVA(metadata, raw_counts, known_covariates_formula)
+runSVA(raw_counts, null_model_matrix, full_model_matrix)
 }
 \arguments{
-\item{metadata}{metadata in the shape samples x parameters where the columns are features of the data (eg, libraryDate, RIN, etc)}
-
 \item{raw_counts}{raw gene counts in the shape gene x samples where ncols matches nrow of metadata (samples == samples)}
+
+\item{metadata}{metadata in the shape samples x parameters where the columns are features of the data (eg, libraryDate, RIN, etc)}
 
 \item{known_covariate_formula}{eg ~Condition+Cell, passed as an R formula}
 }

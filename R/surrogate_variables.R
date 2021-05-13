@@ -5,17 +5,13 @@
 #' @param known_covariate_formula eg ~Condition+Cell, passed as an R formula
 #'
 #' @export
-runSVA = function(metadata, raw_counts, known_covariates_formula){
+runSVA = function(raw_counts, null_model_matrix, full_model_matrix){
 
   # remove genes with 0 counts
-  raw_counts=raw_counts[rowSums(data)>0,]
-
-  # create design matricies
-  mod0=model.matrix(~1,data=metadata) # make intercept only model
-  mod1=model.matrix(known_covariates_formula,data=metadata) # model with known covariates
+  raw_counts=raw_counts[rowSums(raw_counts)>0,]
 
   # run sva
-  sva_obj=svaseq(as.matrix(data),mod1,mod0) # run sva
+  sva_obj=svaseq(as.matrix(raw_counts),full_model_matrix,null_model_matrix) # run sva
 
   return(sva_obj)
 
