@@ -13,12 +13,9 @@ calculateRLE = function(counts_df, logged = FALSE){
 
   counts_df = as_tibble(counts_df)
 
-  if(logged == FALSE){
-    # log2 the table (add pseudo count of 1)
-    log2_counts_df = log2(counts_df + 1)
-  } else{
-    log2_counts_df = counts_df
-  }
+  # if logged==TRUE, re-assign counts_df to log2_counts_df. else, add a pseudocount and log2
+  log2_counts_df = ifelse(logged, counts_df,  log2(counts_df + 1))
+
   # calculate median expression for each gene across samples
   gene_wise_medians = apply(log2_counts_df, 1, median)
 
