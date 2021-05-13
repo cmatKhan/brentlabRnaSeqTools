@@ -12,6 +12,8 @@ on:
 
 name: R-CMD-check
 
+env: _R_CHECK_CRAN_INCOMING_=FALSE
+
 jobs:
   R-CMD-check:
     runs-on: macOS-latest
