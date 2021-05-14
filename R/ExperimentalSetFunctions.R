@@ -6,14 +6,16 @@
 #'
 #' @export
 createEnvPertSet = function(combined_df){
-  env_pert_set = combined_df %>% filter((is.na(treatment) | treatment == "cAMP"),
+  env_pert_set = combined_df %>% filter( (treatment == "" | treatment == "cAMP" | treatment=="noTreatment" | is.na(treatment) ),
                                         experimentDesign == 'Environmental_Perturbation',
                                         purpose == "fullRNASeq", !is.na(fastqFileName),
                                         genotype1=='CNAG_00000')
   colnames(env_pert_set) = toupper(colnames(env_pert_set))
 
+  env_pert_set$TREATMENT = unfactor(env_pert_set$TREATMENT)
+
   env_pert_set = env_pert_set %>% dplyr::mutate(TREATMENT = replace_na(TREATMENT, 'noTreatment'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(TREATMENTCONC = replace_na(TREATMENTCONC, 'noTreatmentConc'))
+  env_pert_set = env_pert_set %>% dplyr::mutate(iTREATMENTCONC = replace_na(TREATMENTCONC, 'noTreatmentConc'))
   env_pert_set = env_pert_set %>% dplyr::mutate(OTHER_CONDITIONS = replace_na(OTHERCONDITIONS, 'noOtherConditions'))
   env_pert_set = env_pert_set %>% dplyr::mutate(MEDIUM = replace_na(MEDIUM, 'noMedium'))
   env_pert_set = env_pert_set %>% dplyr::mutate(ATMOSPHERE = replace_na(ATMOSPHERE, 'noAtmosphere'))

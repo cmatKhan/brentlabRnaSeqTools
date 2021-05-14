@@ -14,10 +14,10 @@ calculateRLE = function(counts_df, logged = FALSE){
   counts_df = as_tibble(counts_df)
 
   # if logged==TRUE, re-assign counts_df to log2_counts_df. else, add a pseudocount and log2
-  log2_counts_df = ifelse(logged, counts_df,  log2(counts_df + 1))
+  ifelse(logged, assign('log2_counts_df', counts_df),  assign('log2_counts_df', log2(counts_df + 1)))
 
   # calculate median expression for each gene across samples
-  gene_wise_medians = apply(log2_counts_df, 1, median)
+  gene_wise_medians = apply(log2_counts_df, 1, median, na.rm=TRUE)
 
   # calculate deviations from the median
   rle_table_full = sweep(log2_counts_df, 1, gene_wise_medians, '-')
@@ -53,7 +53,7 @@ rleSummary = function(rle_table_full){
   # calculate median deviation by sample
   median_deviation_by_sample = apply(rle_table_full, 2, median, na.rm=TRUE)
   # calculate interquartile range
-  iqr = apply(rle_table_full, 2, iqr)
+  iqr = apply(rle_table_full, 2, iqr, na.rm=TRUE)
   # assemble table
   rle_table_summary = tibble(FASTQFILENAME = colnames(rle_table_full),
                              SAMPLE_DEVIATION_MEDIAN = median_deviation_by_sample,
@@ -125,18 +125,18 @@ extractRLEByReplicateGroup_90minInduction = function(meta_qual_df, norm_counts, 
         }
 
         if (already_logged_flag == TRUE){
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
-          write_csv(as_tibble(fltr_rle_full), full_filename)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
+          write.csv(as_tibble(fltr_rle_full), full_filename, row.names=FALSE)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
+          write.csv(as_tibble(fltr_rle_summary), summary_filename, row.names=FALSE)
 
         } else{
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, gene_id_column=NULL)
-          write_csv(as_tibble(fltr_rle_full), full_filename)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts)
+          write.csv(as_tibble(fltr_rle_full), full_filename, row.names=FALSE)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
+          write.csv(as_tibble(fltr_rle_summary), summary_filename, row.names=FALSE)
         }
       }
     }
@@ -171,14 +171,14 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
           write_csv(as_tibble(fltr_rle_summary), summary_filename)
 
         } else{
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, seq(1,nrow(norm_counts)))
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, seq(1,nrow(norm_counts)))
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
@@ -217,14 +217,14 @@ extractRLEByReplicateGroup_EnvPert_titrations = function(df, norm_counts, output
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
           write_csv(as_tibble(fltr_rle_summary), summary_filename)
 
         } else{
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, seq(1,nrow(norm_counts)))
+          fltr_rle_full = calculateRLE(ftlr_norm_counts)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
@@ -261,14 +261,14 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
           write_csv(as_tibble(fltr_rle_summary), summary_filename)
 
         } else{
-          fltr_rle_full = createFullRLETable(ftlr_norm_counts, seq(1,nrow(norm_counts)))
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, seq(1,nrow(norm_counts)))
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
@@ -450,16 +450,18 @@ new_rlePlotFunc = function(deseq_object, model_matrix, column_filter, title){
 
   fltr_effect_removed_counts = effect_removed_counts[ ,column_filter]
 
-  norm_count_rle = new_rlePlot_helper(fltr_norm_counts, paste(title, 'Norm Counts', sep=" - "))
-  effect_removed_rle = new_rlePlot_helper(fltr_effect_removed_counts, paste(title, 'Effect Removed', sep=' - '))
+  norm_count_rle = new_rlePlot_helper(fltr_norm_counts, logged=FALSE, paste(title, 'Norm Counts', sep=" - "))
+  effect_removed_rle = new_rlePlot_helper(fltr_effect_removed_counts, logged=TRUE, paste(title, 'Effect Removed', sep=' - '))
 
   return (list('norm_count_rle' = norm_count_rle, 'effect_removed_rle' = effect_removed_rle))
 
 
 }
 
-new_rlePlot_helper = function(count_df, title){
-  rle_full_table = createFullRLETable(count_df)
+new_rlePlot_helper = function(count_df, logged, title){
+
+
+  rle_full_table = calculateRLE(count_df, logged=logged)
 
   gene_id = read_tsv("~/Desktop/rnaseq_pipeline/rnaseq_pipeline/genome_files/KN99/KN99_gene_id_list.txt", col_names = 'gene_id')[1:6967,]
   rle_full_table$gene_id = gene_id
