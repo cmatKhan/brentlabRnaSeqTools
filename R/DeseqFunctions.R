@@ -109,7 +109,7 @@ examineSingleGroupWithLibDateSizeFactors = function(qc1_passing_metadata, raw_co
     } else{
       counts = raw_counts[, metadata$FASTQFILENAME]
       split_dds = DESeqDataSetFromMatrix(countData = counts, colData = metadata, design=~1)
-      sizeFactors(split_dds)
+      split_dds = estimateSizeFactors(split_dds)
       split_sf = sizeFactors(split_dds)
       size_factor_list = append(size_factor_list, split_sf)
     }
