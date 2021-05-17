@@ -1,5 +1,7 @@
 [![Codecov test coverage](https://codecov.io/gh/cmatKhan/brentlabRnaSeqTools/branch/master/graph/badge.svg)](https://codecov.io/gh/cmatKhan/brentlabRnaSeqTools?branch=master)[![R-CMD-check](https://github.com/cmatKhan/brentlabRnaSeqTools/workflows/R-CMD-check/badge.svg)](https://github.com/cmatKhan/brentlabRnaSeqTools/actions)
 
+See [Online Documentation](https://rdrr.io/github/cmatKhan/brentlabRnaSeqTools/)
+
 This is the featureCounts/subreads homepage. In particular, has a good example of how to make mean/variance graph with voom
 http://bioinf.wehi.edu.au/RNAseqCaseStudy/
 
