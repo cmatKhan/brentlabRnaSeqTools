@@ -2,21 +2,30 @@
 % Please edit documentation in R/DatabaseInteractionFunctions.R
 \name{getMetadata}
 \alias{getMetadata}
-\title{Get Combined Metadata from the database}
+\title{Get the combined metadata as a tibble from a remote database}
+\source{
+\url{https://rpostgres.r-dbi.org/}
+}
 \usage{
-getMetadata(api_url)
+combined_df = getMetadata(database_urls$kn99_host, database_urls$kn99_db_name, Sys.getenv("db_user"), Sys.getenv("db_password"))
 }
 \arguments{
-\item{api_url}{NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /}
+\item{database_host}{if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com}
 
-\item{table_vector}{list of tables to get from api_url. DEFAULT: c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")}
+\item{database_name}{name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly}
+
+\item{database_user}{a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info}
+
+\item{database_password}{password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info}
 }
 \value{
-a dataframe of the joined tables in the database
+A DBI connection to the remote database
 }
 \description{
-GET tables specified in table_vector, join on keys, return combined tables as a dataframe
+Join the biosample, rnasample, s1sample, s2sample, library, fastqFiles and qualityAssessment tables (in that order, left joins) and return the result as a tibble
+
+Use the RPostgres package to connect to a remote postgresql database, do the table joining, and return the joined metadata as a tibble. The database connection is closed
 }
 \note{
-api_url is a environmental variable saved in the package which will point to the current url (as of now, the one listed above)
+for information on using R environmental files, see \url{https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf}
 }

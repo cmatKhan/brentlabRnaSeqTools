@@ -1,57 +1,51 @@
-#' Get Combined Metadata from the database
+#' Get the combined metadata as a tibble from a remote database
 #'
-#' GET tables specified in table_vector, join on keys, return combined tables as a dataframe
-#' @usage getMetadata(api_url)
-#' @param api_url NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /
-#' @note api_url is a environmental variable saved in the package which will point to the current url (as of now, the one listed above)
-#' @param table_vector list of tables to get from api_url. DEFAULT: c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
-#' @return a dataframe of the joined tables in the database
+#' @description Join the biosample, rnasample, s1sample, s2sample, library, fastqFiles and qualityAssessment tables (in that order, left joins) and return the result as a tibble
+#'
+#' Use the RPostgres package to connect to a remote postgresql database, do the table joining, and return the joined metadata as a tibble. The database connection is closed
+#' @usage combined_df = getMetadata(database_urls$kn99_host, database_urls$kn99_db_name, Sys.getenv("db_user"), Sys.getenv("db_password"))
+#' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
+#' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
+#' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @param database_password password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @note for information on using R environmental files, see \url{https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf}
+#' @source \url{https://rpostgres.r-dbi.org/}
+#' @return A DBI connection to the remote database
 #'
 #' @export
-getMetadata = function(api_url, table_vector = c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")){
+getMetadata = function(database_host, database_name, database_user, database_password){
 
-  tablename_vector = table_vector
+  db = connectToDatabase(database_host, database_name, database_user, database_password)
 
-  table_vector = lapply(tablename_vector, function(x) joinTables(x,api_url))
+  biosample = tbl(db, 'bioSample')
+  rnasample = tbl(db, 'rnaSample')
+  s1sample = tbl(db, 's1cDNASample')
+  s2sample = tbl(db, 's2cDNASample')
+  library = tbl(db, 'library')
+  fastqFiles = tbl(db, 'fastqFiles')
+  quality = tbl(db, 'qualityAssessment')
 
-  names(table_vector) = tablename_vector
+  joined_meta_tables = biosample %>%
+    left_join(rnasample, by = c('bioSampleNumber' = 'bioSampleNumber_id'))%>%
+    left_join(s1sample, by = c('rnaSampleNumber' = 'rnaSampleNumber_id'))%>%
+    left_join(s2sample, by = c('s1cDNASampleNumber' = 's1cDNASampleNumber_id'))%>%
+    left_join(library, by = c('s2cDNASampleNumber' = 's2cDNASampleNumber_id'))%>%
+    left_join(fastqFiles, by = c('librarySampleNumber' = 'librarySampleNumber_id'))%>%
+    left_join(quality, by = c('fastqFileNumber' = 'fastqFileNumber_id'))
 
-  combined_df = table_vector[[1]]
+  metadata_df = as_tibble(joined_meta_tables)
 
-  for(i in seq(2, length(table_vector))){
-    combined_df = combined_df %>% left_join(table_vector[[i]])
-  }
+  # TODO fix merging above so that column names aren't duplicated in qualityAssess table (fastqFileName in both)
+  # deal idiosyncratically with instances in which fastqFiles and qualityAssess fastqFileName may not overlap -- this shouldn't happen, really -- need to fix in database
 
-  # replace empty string with NA
-  combined_df[combined_df == ""] = NA
+  # note: there are conflicts in dependencies, hence explicitely calling select and rename. see here for rename https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist
+  metadata_df = metadata_df %>%
+    dplyr::select(-fastqFileName.y) %>%
+    plyr::rename(c(fastqFileName.x = 'fastqFileName'))
 
-  return(combined_df)
-}
+  dbDisconnect(db)
 
-#' @param table_name name of a table in the database, eg one of c("BioSample", "RnaSample", "S1cdnaSample", "S2cdnaSample", "Library", "FastqFiles", "QualityAssess")
-#' @param api_url NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /
-#' @export
-joinTables = function(tablename, api_url){
-  tmp_dir = tempdir()
-  tmp <- paste(tmp_dir, paste0(tablename, ".json"), sep="/")
-
-  table_http_addr = paste(api_url, tablename, sep="/")
-
-  curl_download(url=table_http_addr, tmp)
-
-  response = fromJSON(tmp)
-
-  json_file <- lapply(response, function(x) {
-    x[sapply(x, is.null)] <- NA
-    unlist(x)
-  })
-
-  metadata = as_tibble(do.call("cbind", json_file))
-
-  # delete the tmp file
-  unlink(tmp)
-
-  return (metadata)
+  return(metadata_df)
 }
 
 #' Get combined raw counts
@@ -62,68 +56,88 @@ joinTables = function(tablename, api_url){
 #' @return a gene by samples dataframe of all counts
 #'
 #' @export
-getRawCounts = function(api_url){
-  tablename="Counts"
+getRawCounts = function(database_host, database_name, database_user, database_password){
+  db = connectToDatabase(database_host, database_name, database_user, database_password)
 
-  tmp_dir = tempdir()
+  counts = dbGetQuery(db, 'select "rawCounts" from counts')
 
-  next_counts_url = paste(api_url, tablename, sep="/")
-  page = 1
-  while (length(next_counts_url > 0)){
-    tmp <- paste(tmp_dir, paste0(tablename, "_", as.character(page), ".json"), sep="/")
+  counts_df = bind_cols(lapply(seq(1, length(counts$rawCounts)), function(x) (as.data.frame(fromJSON(counts$rawCounts[x]), check.names=FALSE))))
 
-    curl_download(url=next_counts_url, tmp)
-    response = fromJSON(tmp)
-    page = page+1
-    next_counts_url = response[['next']]
-  }
+  dbDisconnect(db)
 
-  count_paths = Sys.glob(paste(tempdir(),"Counts_*", sep="/"))
-  full_df = data.frame(remove = rep(0,6967))
-  for (path in count_paths){
-    response = fromJSON(path)
-    response_data = response$results
-    count_list = lapply(response_data$rawCounts, function(x) x[-which(sapply(x, is.null))][[1]][0:6967])
-    count_df = as.data.frame(count_list, check.names=FALSE)
-    full_df = bind_cols(full_df, count_df)
-    unlink(path)
-  }
-  return(full_df %>% select(-remove))
+  return (counts_df)
 }
-
 
 
 #' pull entire database (not counts) and save to output_dir for archival purposes
 #'
-#' saves both the individual tables and the combined_df
+#' saves both the individual tables, including counts, and the combined_df
 #'
-#' @param output_dir where to deposit a subdirectory, named by todays date in this format: 20210407, with the tables and combined_df inside. eg /lts/mblab/Crypto/rnaseq_data/crypto_database_archive
-#'
+#' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
+#' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
+#' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @param database_password password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @param output_dir where to deposit a subdirectory, named by todays date in this format: 20210407, with the tables and combined_df inside. eg a mounted local directory /mnt/htcf_lts/crypto_database_archive/ --> /lts/mblab/Crypto/rnaseq_data/crypto_database_archive
 #' @return None, writes a directory called <today's date> with tables and combined_df as .csv to output_dir
 #'
 #' @export
-archiveDatabase = function(output_dir){
-  tablename_vector = c("BioSample",
-                       "RnaSample",
-                       "S1cdnaSample",
-                       "S2cdnaSample",
-                       "Library",
-                       "FastqFiles",
-                       "QualityAssess")
+archiveDatabase = function(database_host, database_name, database_user, database_password, output_dir, archive_counts_flag = TRUE){
 
-  table_vector = lapply(tablename_vector, function(x) joinTables(x, api_url))
+  today_date = format(Sys.Date(), "%Y%m%d")
+  current_output_path = file.path(output_dir, today_date)
+  dir.create(current_output_path)
 
-  names(table_vector) = tablename_vector
+  db = connectToDatabase(database_host, database_name, database_user, database_password)
 
-  output_path = paste(output_dir, format(Sys.Date(), "%Y%m%d"), sep="/")
-  dir.create(output_path)
+  tbl_list = list()
 
-  invisible(lapply(tablename_vector, function(x) write_csv(table_vector[[x]], paste(output_path, paste0(x, ".csv"), sep='/'))))
+  tbl_list[['biosample']] = tbl(db, 'bioSample')
+  tbl_list[['rnasample']] = tbl(db, 'rnaSample')
+  tbl_list[['s1sample']] = tbl(db, 's1cDNASample')
+  tbl_list[['s2sample']] = tbl(db, 's2cDNASample')
+  tbl_list[['library']] = tbl(db, 'library')
+  tbl_list[['fastqFiles']] = tbl(db, 'fastqFiles')
+  tbl_list[['qualityAssessment']] = tbl(db, 'qualityAssessment')
 
-  # write combined_df also
-  combined_df = table_vector[[1]]
-  for(i in seq(2, length(table_vector))){
-    combined_df = combined_df %>% left_join(table_vector[[i]])
+  tbl_list_names = names(tbl_list)
+
+  tbl_list = lapply(tbl_list, as_tibble)
+  names(tbl_list) = tbl_list_names # maybe not necessary
+
+  lapply(names(tbl_list), function(x) write_csv(tbl_list[[x]], file.path(current_output_path, paste0(x, ".csv") )))
+
+  combined_df = getMetadata(database_host, database_name, database_user, database_password)
+  write_csv(combined_df, file.path(current_output_path, paste0("combined_df_", today_date,'.csv')))
+
+  if(archive_counts_flag){
+    counts_df = getRawCounts(database_host, database_name, database_user, database_password)
+    write_csv(counts_df, file.path(current_output_path, "counts.csv"))
   }
-  write_csv(combined_df, paste(output_path, 'combined_df.csv', sep="/"))
+
+  dbDisconnect(db)
+
+
+}
+
+#' Connect to a remote postgresql database
+#'
+#' Use the RPostgres package to connect to a remote postgresql database
+#' @usage kn99_database = connectToDatabase(database_urls$kn99_host, database_urls$kn99_db_name, Sys.getenv("db_user"), Sys.getenv("db_password"))
+#' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
+#' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
+#' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @param database_password password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @note for information on using R environmental files, see \url{https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf}
+#' @source \url{https://rpostgres.r-dbi.org/}
+#' @return A DBI connection to the remote database
+#'
+#' @export
+connectToDatabase = function(database_host, database_name, database_user, database_password){
+
+  dbConnect(RPostgres::Postgres(),dbname = database_name,
+            host = database_host, # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
+            port = 5432, # or any other port specified by your DBA
+            user = database_user,
+            password = database_password)
+
 }

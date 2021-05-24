@@ -171,7 +171,7 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)
@@ -261,7 +261,7 @@ extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, p
 
         ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
         if (already_logged_flag){
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, gene_id_column=NULL, logged=TRUE)
+          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
           write_csv(as_tibble(fltr_rle_full), full_filename)
 
           fltr_rle_summary = rleSummary(fltr_rle_full)

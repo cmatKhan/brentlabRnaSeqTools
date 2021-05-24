@@ -1,0 +1,47 @@
+---
+title: "add_new_sheet_to_database"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{add_new_sheet_to_database}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(brentlabRnaSeqTools)
+library(RPostgres)
+library(readxl)
+```
+
+```{r}
+# kn99_database = dbConnect(RPostgres::Postgres(),dbname = database_info$kn99_db_name, 
+#                  host = database_info$kn99_host, # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
+#                  port = 5432, # or any other port specified by your DBA
+#                  user = Sys.getenv("db_user"),
+#                  password = Sys.getenv("db_password"))
+```
+
+```{r}
+#counts_df = getRawCounts(database_info$kn99_host, database_info$kn99_db_name, 'admin', 'netprophet')
+#combined_df = getMetadata(database_info$kn99_host, database_info$kn99_db_name, 'admin', 'netprophet')
+```
+
+```{r}
+#fastq_path="/path/to_new/fastq_sheets_to_database/fastq_05.08.21.xlsx"
+
+#new_sheet = normalizeFastqSheet(fastq_path)
+```
+
+
+```{r}
+
+# dbWriteTable(kn99_database, "fastqFiles", new_sheet, append=TRUE)
+
+```
