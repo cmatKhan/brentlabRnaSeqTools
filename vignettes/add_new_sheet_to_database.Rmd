@@ -29,8 +29,8 @@ library(readxl)
 ```
 
 ```{r}
-#counts_df = getRawCounts(database_info$kn99_host, database_info$kn99_db_name, 'admin', 'netprophet')
-#combined_df = getMetadata(database_info$kn99_host, database_info$kn99_db_name, 'admin', 'netprophet')
+#counts_df = getRawCounts(database_info$kn99_host, database_info$kn99_db_name, 'asdf', 'asdf')
+#combined_df = getMetadata(database_info$kn99_host, database_info$kn99_db_name, 'asdf', 'asdf')
 ```
 
 ```{r}
