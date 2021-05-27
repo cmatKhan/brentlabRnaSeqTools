@@ -16,7 +16,5 @@ test_that("create bam path", {
   expected_output = "/mnt/htcf_lts/lts_align_expr/run_2651_samples/align/Brent_17_GTAC_17_ACTGTCGATC_S18_R1_001_sorted_aligned_reads_with_annote.bam"
   expect_equal(function_output, expected_output)
 
-  expected_error_output = paste0("The following path is invalid: ", expected_output)
-
-  expect_message(createBamPath(run_num, fastq_filename, lts_align_prefix),expected_error_output)
+  expect_error(createBamPath(run_num, fastq_filename, lts_align_prefix))
 })

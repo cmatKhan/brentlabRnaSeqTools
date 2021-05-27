@@ -9,7 +9,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
@@ -21,7 +22,7 @@ library(brentlabRnaSeqTools)
 ```
 
 filter using grepl
-```{r, eval=FALSE}
+```{r}
 data <- filter(myData,
             grepl('Peromyscus', scientificName),
             sex == 'F')

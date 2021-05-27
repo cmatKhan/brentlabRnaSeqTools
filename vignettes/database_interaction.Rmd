@@ -35,3 +35,25 @@ dbSendQuery(kn99_db, sql_stmt)
 
 ```
 
+```{r connect to the database}
+kn99_database = dbConnect(RPostgres::Postgres(),dbname = database_info$kn99_db_name,
+                 host = database_info$kn99_host, # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
+                 port = 5432, # or any other port specified by your DBA
+                 user = Sys.getenv("db_user"),
+                 password = Sys.getenv("db_password"))
+```
+
+Right now, there is a fair amount of manipulating that needs to happen to the fastq sheet -- do check that the columns and entries are what are expected. However, the error messages from the database are fairly useful
+
+```{r read in fastq}
+fastq_path="/path/to_new/fastq_sheets_to_database/fastq_05.08.21.xlsx"
+
+new_sheet = normalizeFastqSheet(fastq_path)
+```
+
+
+```{r submit to database}
+
+dbWriteTable(kn99_database, "fastqFiles", new_sheet, append=TRUE)
+
+```
