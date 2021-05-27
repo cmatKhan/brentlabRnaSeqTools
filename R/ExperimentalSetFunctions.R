@@ -34,11 +34,17 @@ createEnvPertSet = function(combined_df){
 #'
 #' @export
 createNinetyMinuteInductionSet = function(metadata, grant_df){
-  metadata = metadata %>% dplyr::mutate(treatment = replace_na(treatment, 'noTreatment'))
-  metadata = metadata %>% dplyr::mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions'))
-  metadata = metadata %>% dplyr::mutate(medium = replace_na(medium, 'noMedium'))
-  metadata = metadata %>% dplyr::mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere'))
-  metadata = metadata %>% dplyr::mutate(pH = replace_na(pH, 'noPh'))
+
+
+  metadata = metadata %>%
+    # replace empty strings with NA
+    dplyr::mutate_if(is.character, list(~na_if(.,""))) %>%
+    # replace NAs with string entry
+    dplyr::mutate(treatment = replace_na(treatment, 'noTreatment')) %>%
+    dplyr::mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions')) %>%
+    dplyr::mutate(medium = replace_na(medium, 'noMedium')) %>%
+    dplyr::mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
+    dplyr::mutate(pH = replace_na(pH, 'noPh'))
 
   metadata$temperature %<>% as.numeric
   metadata$timePoint %<>% as.numeric

@@ -18,24 +18,24 @@ knitr::opts_chunk$set(
 library(brentlabRnaSeqTools)
 ```
 
-```{r}
+```{r, eval=FALSE}
 # NOTE: api_url is an environmental variable of the package that stores the current url to the crypto database api
 combined_df = getMetadata(api_url)
 ```
 
-```{r, include = FALSE}
+```{r, eval=FALSE}
 # grant df is a dataframe of the 2016 grant summary, loaded with the package
 induction_set = createNinetyMinuteInductionSet(combined_df, grant_df)
 passing_qc1_induction_set = qualityAssessmentFilter(induction_set)
 ```
 ### read in a deseq data set for this data that has had the DESeq function called on it (this should be done on the cluster)
-```{r, include = FALSE}
+```{r, eval=FALSE}
 # this is in my scratch space (until the garbage collector gets it) at /scratch/mblab/chasem/rnaseq_pipeline/experiments/database_90_min_update. Feel free to rsync or scp it.
 path = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/database_pulled_libraryptocol_librarydate_20210227.rds"
 deseq_object = readRDS(path)
 ```
 ### extract norm counts
-```{r, include = FALSE}
+```{r, eval=FALSE}
 norm_counts = counts(deseq_object, normalized=TRUE)
 ```
 ### remove the library protocol and date effects
@@ -45,7 +45,7 @@ norm_counts = counts(deseq_object, normalized=TRUE)
 removed_librarydate_effect_log_norm_counts = removeParameterEffects(deseq_object, design(deseq_object))
 ```
 ### RLE
-```{r, include=FALSE}
+```{r, eval=FALSE}
 # obviously, change the output paths
 norm_output = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/rle/norm_counts_rle"
 removed_effect_output = "/home/chase/projects/brentlab/daily_work/20210211_induction_set_tally_with_database/rle/librarydate_effect_removed"
@@ -55,18 +55,18 @@ dir.create(removed_effect_output)
 sorted_passing_induction_meta_qual = as_tibble(colData(deseq_object))
 ```
 
-```{r, include = FALSE}
+```{r, eval=FALSE}
 sorted_passing_induction_meta_qual$GENOTYPE = sorted_passing_induction_meta_qual$GENOTYPE1
 extractRLEByReplicateGroup_90minInduction(sorted_passing_induction_meta_qual, norm_counts, norm_output, protocol_selector = FALSE, already_logged_flag = FALSE)
 createRLEPlotsByReplicateGroup(norm_output, sorted_passing_induction_meta_qual)
 ```
 
-```{r, include = FALSE}
+```{r, eval=FALSE}
 extractRLEByReplicateGroup_90minInduction(sorted_passing_induction_meta_qual, removed_librarydate_effect_log_norm_counts, removed_effect_output, protocol_selector = FALSE, already_logged_flag = TRUE)
 createRLEPlotsByReplicateGroup(removed_effect_output, sorted_passing_induction_meta_qual)
 ```
 
-```{r, include=FALSE}
+```{r, eval=FALSE}
 
 norm_counts_rle_summary_list = Sys.glob(paste(norm_output,"*summary*", sep="/"))
 norm_counts_rle_summary_df_list = lapply(norm_counts_rle_summary_list, read_csv)
@@ -83,7 +83,7 @@ removed_effect_rle_summary = left_join(removed_effect_rle_summary, sorted_passin
 
 ```
 ### filter samples
-```{r, include = FALSE}
+```{r, eval=FALSE}
 # TODO: UPDATE RLE PLOTS
 
 iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE<.6125)
@@ -92,7 +92,7 @@ iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE
 # write_csv(iqr_fltr_rle_summary, 'iqr_fltr_meta_qual.csv')
 ```
 
-```{r}
+```{r, eval=FALSE}
 plotRLE_bar_iqr = function(rle_summary_df, title){
   x =ggplot(rle_summary_df, aes(INTERQUARTILE_RANGE))+
     geom_histogram()+ggtitle(title)
@@ -106,12 +106,12 @@ plot(hist)
 ```
 
 ### create tally
-```{r, include = FALSE}
+```{r, eval=FALSE}
 induction_set_tally = createInductionSetTally(induction_set, sorted_passing_induction_meta_qual, iqr_fltr_rle_summary, grant_df)
 write_csv(induction_set_tally, "~/code/brentlab/induction_experiment_table/data/genotype_tally.csv")
 ```
 ### parse replicate sets out for the website table
-```{r, include=FALSE}
+```{r, eval=FALSE}
 induction_meta_qual_with_iqr = induction_set %>% left_join(removed_effect_rle_summary %>% select(FASTQFILENAME, INTERQUARTILE_RANGE, ABS_SAMPLE_DEVIATION_MEDIAN))
 # DO THIS FOR VISUALIZATION TO FIND BROWSER SHOT
 induction_meta_qual_with_iqr$FASTQFILENAME = paste0(induction_meta_qual_with_iqr$FASTQFILENAME, '.fastq.gz')
@@ -120,13 +120,13 @@ table_vis_meta_qual = induction_meta_qual_with_iqr %>% select(AUTOAUDIT, AUTOSTA
 write_csv(table_vis_meta_qual, '~/code/brentlab/induction_experiment_table/data/sample_detail_meta_qual.csv')
 ```
 
-```{r, include=FALSE}
+```{r, eval=FALSE}
 perturbed_induction_set = table_vis_meta_qual %>% filter(GENOTYPE1 != 'CNAG_00000')
 
 induction_set_split = split(perturbed_induction_set, f=list(perturbed_induction_set$GENOTYPE1))
 ```
 
-```{r, include=FALSE}
+```{r, eval=FALSE}
 dir.create("~/code/brentlab/induction_experiment_table/data/split_by_genotype")
 for(geno in names(induction_set_split)){
   print(geno)

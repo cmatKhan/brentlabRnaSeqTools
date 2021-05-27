@@ -8,7 +8,7 @@
 #' @export
 calculateExonicCoverage = function(bamfile_path, genomic_ranges, minus_strand_flag, strandedness, quality_threshold=20L, coverage_threshold=0, lts_align_expr_prefix=Sys.getenv("LTS_ALIGN_EXPR_PREFIX", bamfile_suffix='"_sorted_aligned_reads_with_annote.bam"')){
 
-  bamfile_index = paste0(bamfile_path, ".bai")
+  bamfile_index = getBamIndexPath(bamfile_path)
 
   if (file.exists(bamfile_index)==FALSE){
     stop("The bam file must be indexed (use samtools index to do this. After doing so, there should be a *.bai file in the same dir as the bam)")
@@ -31,8 +31,18 @@ calculateExonicCoverage = function(bamfile_path, genomic_ranges, minus_strand_fl
   # return coverage, calculated as the sum of the bp covered above a given threshold
   ifelse(minus_strand_flag=='unstranded',
          sum((res %>% distinct(pos, .keep_all=TRUE))$count > coverage_threshold)/sum(width(gr),
-                                                                                     sum(exonic_coverage_df$count > coverage_threshold)/sum(width(gr))))
+         sum(exonic_coverage_df$count > coverage_threshold)/sum(width(gr))))
 
+}
+
+getBamIndexPath = function(bamfile_path){
+  bamfile_index = paste0(bamfile_path, ".bai")
+
+  if (file.exists(bamfile_index)==FALSE){
+    stop("The bam file must be indexed (use samtools index to do this. After doing so, there should be a *.bai file in the same dir as the bam)")
+  }
+
+  return(bamfile_index)
 }
 
 #'
@@ -42,18 +52,22 @@ calculateExonicCoverage = function(bamfile_path, genomic_ranges, minus_strand_fl
 #' @param lts_align_expr_prefix the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"
 #' @param bam_suffix the common bam suffix for all bam files stored in /lts. Eg, it might be something like "_sorted_aligned_reads_with_annote.bam"
 #'
-#'
 #' @return a verifiec filepath to the bam file
 #' @export
-createBamPath = function(run_number, fastq_filename, lts_align_expr_prefix, bam_suffix="_sorted_aligned_reads_with_annote.bam"){
+createBamPath = function(run_number, fastq_filename, lts_align_expr_prefix, bam_suffix="_sorted_aligned_reads_with_annote.bam", test=FALSE){
 
   fastqfile_basename = str_remove(basename(fastq_filename), '.fastq.gz')
 
-  bam_path = file.path(paste0(lts_align_expr_prefix, "run_", as.character(run_number),"_samples/align"),
+  bam_path = file.path(lts_align_expr_prefix, paste0("run_", as.character(run_number),"_samples/align"),
                        paste0(fastqfile_basename, bam_suffix))
 
-  # if the path is valid, return the bam_path. else, stop with error
-  ifelse(file.exists(bam_path), bam_path, stop(paste0("The following path is invalid: ", bam_path)))
+  # if test is true, just return the bam_path
+  ifelse(test,
+         bam_path,
+         # if the path is valid, return the bam_path. else, stop with error
+         ifelse(file.exists(bam_path),
+                bam_path,
+                stop(paste0("The following path is invalid: ", bam_path))))
 }
 
 #' Given a GenomicFeatures annotation_db and a gene_id, extract an GRanges object of the exons
@@ -102,13 +116,17 @@ featureGRanges = function(annotation_db, gene_id, feature){
 #' @description Currently set up for cryptococcus. E7420L returns reverse, SolexaPrep returns unstranded. default return is unstranded
 #'
 #' @note: default is unstranded
-#' @param metadata a metadata sheet that at leat contains the libraryProtocol column
+#' @param library_protocol the library protocol of the sample (determines strandedness of the library)
 #'
 #' @return the strandedness of the library based on the value in the libraryProtocol column, or 'unstranded' by default
 #' @export
-determineStrandedness = function(metadata){
+determineStrandedness = function(library_protocol){
 
-  switch(metadata$libraryProtocol,
+  # stop on this condition for now. the switch statement actually defaults to 'unstranded'
+  # consider allowing default to stand, but issue a warning?
+  stopifnot(library_protocol %in% c('E7420L', 'SolexaPrep'))
+
+  switch(library_protocol,
          "E7420L" = "reverse",
          "SolexaPrep" = "unstranded",
          "unstranded")
@@ -126,3 +144,32 @@ mappingStrand = function(library_strandedness, gene_ranges, gene_id){
   as.vector(strand(gene_ranges[names(gene_ranges) == gene_id]))
 
 }
+
+countReadsInRanges = function(bamfile_path,ranges_of_interest, strandedness){
+
+  # right now, this is only configured to handle reverse and unstranded libraries
+  stopifnot(strandedness %in% c('reverse', 'unstranded'))
+
+  bamfile_index = getBamIndexPath(bamfile_path)
+
+  bamfile = BamFile(bamfile_path, index=bamfile_index)
+
+  # see ??scanBamParam isMinusStrand
+  ignore_strand_flag = ifelse(strandedness=='unstranded', TRUE, FALSE)
+
+  # for a stranded library, only count reads aligning to the appropriate strand
+  stranded_bam_params = scanBamParams(which=ranges_of_interest,
+                                             isSecondaryAlignment=FALSE,
+                                             isNotPassingQualityControls=FALSE,
+                                             isSupplementaryAlignment=FALSE,
+                                             isDuplicate=FALSE,
+                                             isMinusSrand=NA)
+
+  ranges_hits = summarizeOverlaps(ranges_of_interest,
+                                  bamfile,
+                                  mode="Union",
+                                  param = bam_params,
+                                  ignore.strand = ignore_strand_flag)
+  return(ranges_hits)
+}
+

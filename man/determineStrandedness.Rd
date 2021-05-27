@@ -4,10 +4,10 @@
 \alias{determineStrandedness}
 \title{from the metadata libraryProtocol column, determine the library strandedness.}
 \usage{
-determineStrandedness(metadata)
+determineStrandedness(library_protocol)
 }
 \arguments{
-\item{metadata}{a metadata sheet that at leat contains the libraryProtocol column}
+\item{library_protocol}{the library protocol of the sample (determines strandedness of the library)}
 }
 \value{
 the strandedness of the library based on the value in the libraryProtocol column, or 'unstranded' by default

@@ -21,10 +21,10 @@ library(brentlabRnaSeqTools)
 ```
 
 filter using grepl
-```{r}
-data_PeroFemales <- filter(myData,
-                   grepl('Peromyscus', scientificName),
-                   sex == 'F')
+```{r, eval=FALSE}
+data <- filter(myData,
+            grepl('Peromyscus', scientificName),
+            sex == 'F')
 
 View(env_pert_set %>% filter(grepl("6.0|4.0",AUTOSTATUSDECOMP, perl=TRUE))%>%
           select(FASTQFILENAME,
