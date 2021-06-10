@@ -7,7 +7,7 @@
 isNumeric(x)
 }
 \arguments{
-\item{any_object}{any R object}
+\item{x}{any R object}
 }
 \description{
 copied directly from the limma codebase

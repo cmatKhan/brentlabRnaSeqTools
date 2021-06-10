@@ -12,6 +12,10 @@ examineSingleGroupWithLibDateSizeFactors(
 )
 }
 \arguments{
+\item{qc1_passing_metadata}{metadata passing auto/manual flags}
+
+\item{raw_counts}{must include at least the sames in the metadata}
+
 \item{row_filter}{is a boolean vector, eg qc1_passing_env_pert_meta_qual$MEDIUM == "PBS"}
 
 \item{size_factor_subset_param}{eg LIBRARYDATE -- the column to group the samples for size factor calculation}

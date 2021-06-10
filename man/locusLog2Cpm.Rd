@@ -12,6 +12,8 @@ locusLog2Cpm(bam_path, strandedness, locus_granges, lib_size)
 \item{strandedness}{the strandedness of the library}
 
 \item{locus_granges}{a granges object specifying the locus over which to count}
+
+\item{lib_size}{the number of reads in the library}
 }
 \value{
 either 0, if there are no counts, or the log2cpm of the counts over the locus. counting is done via the same

@@ -26,8 +26,8 @@ calculateRLE = function(counts_df, log2_transformed_flag = FALSE){
 
 } # end calculateRLE()
 
-#'
 #' calculate medians across rows of dataframe
+#'
 #' @param count_df could be any numeric dataframe, but in this context it will typically be a count (raw or log2) df
 #' @return a vector of row-wise medians (length == nrow of input df)
 #'
@@ -43,6 +43,8 @@ calculateGeneWiseMedians = function(count_df){
 
 #' rleSummary calculates summary statistics of rleFullTable
 #'
+#' @import matrixStats
+#'
 #' @param rle_table_full the output of rleFullTable
 #'
 #' @return a dataframe sample by rle summary statistics
@@ -53,12 +55,12 @@ rleSummary = function(rle_table_full){
   # calculate median deviation by sample
   median_deviation_by_sample = apply(rle_table_full, 2, median, na.rm=TRUE)
   # calculate interquartile range
-  iqr = apply(rle_table_full, 2, iqr, na.rm=TRUE)
+  interquartile_range = apply(rle_table_full, 2, iqr, na.rm=TRUE)
   # assemble table
   rle_table_summary = tibble(FASTQFILENAME = colnames(rle_table_full),
                              SAMPLE_DEVIATION_MEDIAN = median_deviation_by_sample,
                              ABS_SAMPLE_DEVIATION_MEDIAN = abs(median_deviation_by_sample),
-                             INTERQUARTILE_RANGE = iqr)
+                             INTERQUARTILE_RANGE = interquartile_range)
 
   return (rle_table_summary)
 
@@ -67,7 +69,7 @@ rleSummary = function(rle_table_full){
 #'
 #' calculate RLE by replicate groups
 #'
-#' @param replicates_sample_list a list of lists where each sublist represents a replicate group. Entries must be a metadata
+#' @param replicates_vector a list of lists where each sublist represents a replicate group. Entries must be a metadata
 #'                               parameter, such as fastqFileName, that corresponds to the columns of the counts.
 #'                               Suggestion: use something like these dplyr functions to create the list of lists group_by() %>% group_split %>% pull(fastqFileName)
 #' @param gene_quants a gene x sample dataframe with values as some sort of gene quantification (eg normed counts, or log2(norm_counts) with some effect removed), possibly already logged (@see already_logged_flag)
@@ -89,6 +91,7 @@ rleByReplicateGroup = function(replicates_vector, gene_quants, log2_transformed_
 
 #'
 #' plot RLE for a given column filter (eg, metadata[metadata$MEDIUM == 'PBS']$FASTQFILENAME would give a list of fastqFileNames to filter)
+#'
 #' @param deseq_object a deseq object with results from the DESeq() call
 #' @param model_matrix the deseq_object model matrix
 #' @param column_filter a vector of fastqFileNames (or whatever the columns -- samples -- are called)
@@ -114,9 +117,16 @@ rlePlot = function(deseq_object, model_matrix, column_filter, title){
 
 }
 
+#' the actual plotting function for rlePlot
 #'
+#' @import dplyr
+#' @import ggplot2
 #'
+#' @param count_df counts in gene x sample
+#' @param log2_transformed_flag boolean where TRUE indicates the counts are in log2 space
+#' @param title title of the output plot
 #'
+#' @return a ggplot
 #'
 rlePlot_helper = function(count_df, log2_transformed_flag, title){
 
@@ -143,9 +153,10 @@ rlePlot_helper = function(count_df, log2_transformed_flag, title){
 #'
 #' plots output of rleSummaryByReplicateGroup
 #'
+#' @import dplyr
+#'
 #' @param norm_counts_rle output of calculateRLE (maybe one of the sublists in rleByReplicateGroup())
 #' @param removed_effect_rle see norm_counts_rle, but after removing some batch effects
-#' @param set_of_interest either the index of the replicate set of interest, or the name if the list is named
 #' @param metadata_df metadata with at least FASTQFILENAME and LIBRARYDATE
 #' @param title title of the plot
 #'

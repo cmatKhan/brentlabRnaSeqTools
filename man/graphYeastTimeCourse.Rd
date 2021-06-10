@@ -4,7 +4,7 @@
 \alias{graphYeastTimeCourse}
 \title{Plot time vs normalized counts of a given gene over n samples, faceted by librarydate and run}
 \usage{
-graph_output = graphTimeCourse(cst6_sample_metadata, 'CST6', 'YIL036W', cst6_norm_counts)
+graphYeastTimeCourse(metadata_df, genotype_1, gene_id, norm_counts)
 }
 \arguments{
 \item{metadata_df}{where metadata$fastqFileName is equal in format to colnames(raw_counts)}
@@ -19,7 +19,7 @@ graph_output = graphTimeCourse(cst6_sample_metadata, 'CST6', 'YIL036W', cst6_nor
 a ggplot graph of the gene_id in question, faceted on run and library date
 }
 \description{
-Plot time vs normalized counts of a given gene over n samples, faceted by librarydate and run
+graph_output = graphTimeCourse(cst6_sample_metadata, 'CST6', 'YIL036W', cst6_norm_counts)
 }
 \note{
 see the vignette called yeast_timecourse_qc.Rmd. There is also sample data that comes with this

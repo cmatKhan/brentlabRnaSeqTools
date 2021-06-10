@@ -8,6 +8,8 @@ proteinCodingCount(counts, protein_coding_gene_ids)
 }
 \arguments{
 \item{counts}{a dataframe with gene_ids in the rownames and (at minimum) a quantification column called raw_counts}
+
+\item{protein_coding_gene_ids}{a list of gene ids considered protein coding (must correspond with counts rownames)}
 }
 \description{
 given a count dataframe with gene_ids as rownames and quantification in a column called raw_counts, return sum of protein coding genes

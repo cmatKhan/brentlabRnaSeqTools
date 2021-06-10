@@ -6,6 +6,9 @@
 \usage{
 getRunNumberLeadingZero(run_number)
 }
+\arguments{
+\item{run_number}{a run number, most likely from the metadata runNumber field}
+}
 \description{
 correct run number to add leading zero where approprirate
 }

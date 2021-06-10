@@ -4,14 +4,27 @@
 \alias{getRawCounts}
 \title{Get combined raw counts}
 \usage{
-getRawCounts(api_url)
+getRawCounts(database_host, database_name, database_user, database_password)
 }
 \arguments{
-\item{api_url}{NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /}
+\item{database_host}{if connecting to a database hosted on AWS,
+it might be something like ec2-54-83-201-96.compute-1.amazonaws.com}
+
+\item{database_name}{name of the database, eg for cryptococcus kn99, the database might be named kn99_database.
+Check with the documentation, whoever set up the database, or get into the server and check
+directly}
+
+\item{database_user}{a user of the actual database, with some level of permissions. You'll need to check with the
+database maintainer for this. It is suggested that you use a .Renviron file in your
+local project (make sure it is completely ignored by git, R, etc) to store this info}
+
+\item{database_password}{password to the database user. You'll need to check with the database maintainer for this.
+It is suggested that you use a .Renviron file in your local project
+(make sure it is completely ignored by git, R, etc) to store this info}
 }
 \value{
 a gene by samples dataframe of all counts
 }
 \description{
-GET raw counts
+Get combined raw counts
 }

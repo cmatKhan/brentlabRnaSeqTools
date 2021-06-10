@@ -19,8 +19,6 @@ rlePlotCompareEffectRemoved(
 \item{metadata_df}{metadata with at least FASTQFILENAME and LIBRARYDATE}
 
 \item{title}{title of the plot}
-
-\item{set_of_interest}{either the index of the replicate set of interest, or the name if the list is named}
 }
 \value{
 a ggplot with both the norm counts (more transparent) and removedEffect 'counts' on the same plot

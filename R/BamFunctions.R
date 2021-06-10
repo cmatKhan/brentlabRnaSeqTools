@@ -1,9 +1,14 @@
 #'
 #' calculate coverage over a given locus
 #'
+#' @import Rsamtools
+#' @import GenomicFeatures
+#' @import GenomicRanges
+#'
 #' @param bamfile_path path to a bam file @seealso brentlabRnaSeqTools::createBamPath()
 #' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
 #' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
+#' @param strandedness one of c("unstranded", "reverse") indicating the strandedness of the library. note: forward not currently supported
 #' @param ... additional arguments to getCoverageOverRegion()
 #'
 #' @return percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see getCoverageOverRegion())
@@ -23,17 +28,24 @@ calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness, ...
 #'
 #' create a dataframe of coverage by nucleotide over a given locus
 #'
+#' @import Rsamtools
+#' @import GenomicFeatures
+#' @import GenomicRanges
+#'
 #' @param bamfile_path path to a bam file @seealso brentlabRnaSeqTools::createBamPath()
 #' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
 #' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
 #' @param strandedness one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured
+#' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
+#'                          chosen b/c it is the default for HTSeq
+#' @param coverage_threshold minimum read count above which to consider reads. Default is 0
 #' @param lts_align_expr_prefix = path to the directory which stores the run_12345_samples run directories.
 #'                                For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
 #'                                By default, this looks in your .Renviron for a key LTS_ALIGN_EXPR_PREFIX
 #' @param bamfile_suffix = whatever is appended after the fastqFileName (no extension).
 #'                         Currently, this is "_sorted_aligned_reads_with_annote.bam". By default, this looks in your
 #'                         .Renviron for a key BAM_SUFFIX
-#' @references GRanges, RSamtools
+#' @references GenomicRanges, Rsamtools
 #' @export
 getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L,
                                  coverage_threshold=0, lts_align_expr_prefix=Sys.getenv("LTS_ALIGN_EXPR_PREFIX"),
@@ -89,12 +101,16 @@ getBamIndexPath = function(bamfile_path){
 
 #'
 #' create a bam path
+#'
+#' @import stringr
+#'
 #' @description a helper function to creat a bampath from some metadata information. Also checks if index exists
 #'
 #' @param run_number the run_number (mind the leading zeros for old runs) of the run
 #' @param fastq_filename the fastq filename, preferrably without the extension or any leading path info. However, an effort has been made to deal with full paths and extensions
 #' @param lts_align_expr_prefix the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"
 #' @param bam_suffix the common bam suffix for all bam files stored in /lts. Eg, it might be something like "_sorted_aligned_reads_with_annote.bam"
+#' @param test boolean, default FALSE. Set to TRUE if testing this function
 #'
 #' @return a verified filepath to the bam file
 #' @export
@@ -116,13 +132,15 @@ createBamPath = function(run_number, fastq_filename, lts_align_expr_prefix, bam_
                 stop(paste0("The following path is invalid: ", bam_path))))
 }
 
-#' Given a GenomicFeatuers annotation_db and a gene_id, extract an GRanges object of the cds
+#' Given a GenomicFeatures annotation_db and a gene_id, extract an GRanges object of the cds
+#'
+#' @import GenomicFeatures
+#' @import GenomicRanges
 #'
 #' @param annotation_db a GenomicFeatures db. You can either get this from the bioconductor resources, or create your own with a gtf
 #' @param gene_id the ID of a gene in the db. Eg, for cryptococcus CKF44_05222
 #' @param feature one of c("cds", "exon"), determins which feature to extract from the annotations
-#' @usage exon_ranges = featureGRanges(kn99_db, "CKF44_05222", "exon")
-#' @references GRanges, GenomicFeatures
+#' @references GenomicRanges::GRanges, GenomicFeatures
 #' @return an IRanges object of the given gene's exons
 #'
 #' @export
@@ -181,6 +199,10 @@ determineLibraryStrandedness = function(library_protocol){
 
 #'
 #' given a bam file path, GRanges object, and strandedness of library, return total counts
+#'
+#' @import Rsamtools
+#' @import GenomicRanges
+#'
 #' @param bamfile_path path to bam file
 #' @param granges_of_interest a GRanges object
 #' @param strandedness one of c("reverse", "unstranded")

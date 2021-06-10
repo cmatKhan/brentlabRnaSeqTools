@@ -20,6 +20,8 @@ createBamPath(
 \item{lts_align_expr_prefix}{the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"}
 
 \item{bam_suffix}{the common bam suffix for all bam files stored in /lts. Eg, it might be something like "_sorted_aligned_reads_with_annote.bam"}
+
+\item{test}{boolean, default FALSE. Set to TRUE if testing this function}
 }
 \value{
 a verified filepath to the bam file

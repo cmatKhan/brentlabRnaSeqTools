@@ -24,6 +24,11 @@ getCoverageOverRegion(
 
 \item{strandedness}{one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured}
 
+\item{quality_threshold}{quality threshold above which reads will be considered. 20l is default, which is
+chosen b/c it is the default for HTSeq}
+
+\item{coverage_threshold}{minimum read count above which to consider reads. Default is 0}
+
 \item{lts_align_expr_prefix}{= path to the directory which stores the run_12345_samples run directories.
 For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
 By default, this looks in your .Renviron for a key LTS_ALIGN_EXPR_PREFIX}
@@ -36,5 +41,5 @@ Currently, this is "_sorted_aligned_reads_with_annote.bam". By default, this loo
 create a dataframe of coverage by nucleotide over a given locus
 }
 \references{
-GRanges, RSamtools
+GenomicRanges, Rsamtools
 }

@@ -1,6 +1,6 @@
 #' URLS to active databases
 #'
-#' A list containing the urls to active databases. Named by organism (eg 'kn99' or 's288cr64')
+#' @description A list containing the urls to active databases. Named by organism (eg 'kn99' or 's288cr64')
 #'
 #' @format A list with named slots
 #' \describe{
@@ -19,3 +19,16 @@
 #' @description this is best remedied in the database itself by forcing the column to be a string and adding the 0s
 #'
 "run_numbers_with_leading_zero"
+
+#'
+#' the 2016 grant summary represented as a dataframe
+#'
+#' @description also check the google sheet
+#'
+"grant_df"
+
+#'
+#' URLS to the yeast and kn99 databases
+#' @description this will eventually hold the urls to all the tables for yeast and kn99
+#'
+"database_urls"

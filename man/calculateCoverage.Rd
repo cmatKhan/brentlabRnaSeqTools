@@ -13,6 +13,8 @@ calculateCoverage(bamfile_path, annote_db, gene_id, strandedness, ...)
 
 \item{gene_id}{a gene_id of interest -- must be in the gene names of the annote_db object}
 
+\item{strandedness}{one of c("unstranded", "reverse") indicating the strandedness of the library. note: forward not currently supported}
+
 \item{...}{additional arguments to getCoverageOverRegion()}
 }
 \value{

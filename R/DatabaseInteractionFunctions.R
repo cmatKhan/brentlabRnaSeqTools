@@ -2,8 +2,10 @@
 #'
 #' @description Join the biosample, rnasample, s1sample, s2sample, library, fastqFiles and qualityAssessment tables (in that order, left joins) and return the result as a tibble
 #'
-#' Use the RPostgres package to connect to a remote postgresql database, do the table joining, and return the joined metadata as a tibble. The database connection is closed
-#' @usage combined_df = getMetadata(database_urls$kn99_host, database_urls$kn99_db_name, Sys.getenv("db_user"), Sys.getenv("db_password"))
+#' @import RPostgres
+#' @import jsonlite
+#'
+#' @description Use the RPostgres package to connect to a remote postgresql database, do the table joining, and return the joined metadata as a tibble. The database connection is closed
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
 #' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
 #' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
@@ -42,9 +44,21 @@ getMetadata = function(database_host, database_name, database_user, database_pas
 
 #' Get combined raw counts
 #'
-#' GET raw counts
-#' @usage getRawCounts(api_url)
-#' @param api_url NOTE: api_url is a variable saved into the project environment, in addition to the parameter. You can use the usage statement directly. The argument is provided for development in the event that you want to test a local instance of the database. An example url: "http://13.59.167.2/api" No trailing /
+#' @import RPostgres
+#' @import jsonlite
+#'
+#' @param database_host if connecting to a database hosted on AWS,
+#'                      it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
+#' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database.
+#'                      Check with the documentation, whoever set up the database, or get into the server and check
+#'                      directly
+#' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the
+#'                      database maintainer for this. It is suggested that you use a .Renviron file in your
+#'                      local project (make sure it is completely ignored by git, R, etc) to store this info
+#' @param database_password password to the database user. You'll need to check with the database maintainer for this.
+#'                          It is suggested that you use a .Renviron file in your local project
+#'                          (make sure it is completely ignored by git, R, etc) to store this info
+#'
 #' @return a gene by samples dataframe of all counts
 #'
 #' @export
@@ -63,13 +77,18 @@ getRawCounts = function(database_host, database_name, database_user, database_pa
 
 #' pull entire database (not counts) and save to output_dir for archival purposes
 #'
-#' saves both the individual tables, including counts, and the combined_df
+#' @description saves both the individual tables, including counts, and the combined_df
+#'
+#' @import RPostgres
+#' @import readr
+#' @import dplyr
 #'
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
 #' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
 #' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
 #' @param database_password password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
 #' @param output_dir where to deposit a subdirectory, named by todays date in this format: 20210407, with the tables and combined_df inside. eg a mounted local directory /mnt/htcf_lts/crypto_database_archive/ --> /lts/mblab/Crypto/rnaseq_data/crypto_database_archive
+#' @param archive_counts_flag boolean indicating whether or not to save the counts. default is TRUE
 #' @return None, writes a directory called <today's date> with tables and combined_df as .csv to output_dir
 #'
 #' @export
@@ -112,8 +131,9 @@ archiveDatabase = function(database_host, database_name, database_user, database
 
 #' Connect to a remote postgresql database
 #'
-#' Use the RPostgres package to connect to a remote postgresql database
-#' @usage kn99_database = connectToDatabase(database_urls$kn99_host, database_urls$kn99_db_name, Sys.getenv("db_user"), Sys.getenv("db_password"))
+#' @import RPostgres
+#'
+#' @description Use the RPostgres package to connect to a remote postgresql database
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
 #' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
 #' @param database_user a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info
@@ -148,6 +168,11 @@ listTables = function(db){
 
 #'
 #' get (via a http POST request) your user authentication token from the database
+#'
+#' @import httr
+#' @import jsonlite
+#' @import dplyr
+#'
 #' @param url check the database_info variable. It should be under database_info$organism_auth_url. Otherwise,
 #'            the path to the authentication endpoint
 #' @param username a valid username for the database. If you don't have one, then you'll need to ask for one to be created
@@ -163,7 +188,10 @@ listTables = function(db){
 getUserAuthToken = function(url, username, password){
 
   # see package httr for help
-  token_response = POST(url=url, body=list(username=username, password=password), encode='json')
+  token_response = POST(url=url,
+                        body=list(username=username,
+                                  password=password),
+                        encode='json')
 
   if( http_status(token_response)$category == "Success" ){
     message("You might want to put your token in your .Renviron. If you do, please make sure the .Renviron file is in your .gitignore")
@@ -174,9 +202,14 @@ getUserAuthToken = function(url, username, password){
   }
 }
 
+# TODO add dry run option
 
 #'
 #' post counts to database
+#'
+#' @import httr
+#' @import jsonlite
+#' @import dplyr
 #'
 #' @description using the package httr, post the raw count .csv, which is the compiled counts for a given run, to the database
 #'
@@ -241,18 +274,24 @@ postCounts = function(database_counts_url, run_number, auth_token, new_counts_pa
   res_list
 }
 
+# TODO add dry run option
+
 #'
 #' post new qc sheet to database
+#'
+#' @import httr
+#' @import jsonlite
+#' @import dplyr
 #'
 #' @description using the package httr, post the new qc sheet to the database
 #'
 #' @note there can be problems with dependencies and the rename function. this is working for now,
-#' but see here for more info \url{https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist}
+#'       but see here for more info \url{https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist}
 #'
 #' @param database_qc_url eg paste(database_info$kn99_base_url, "QualityAssessment/", sep="/")
 #' @param auth_token see brentlabRnaSeqTools::getUserAuthToken
 #' @param run_number the run number of this qc sheet -- this is important b/c fastqFileNames aren't necessarily unique
-#' outside of their runs
+#'                   outside of their runs
 #' @param new_qc_path path to the new counts csv
 #' @param fastq_table a recent pull of the database fastq table
 #'
@@ -320,4 +359,47 @@ postQcSheet = function(database_qc_url, auth_token, run_number, new_qc_path, fas
        content_type("application/json"),
        body = post_body,
        encode = 'json')
+}
+
+# TODO add dry run option
+
+#'
+#' PATCH entries in database table
+#'
+#' @import httr
+#' @import jsonlite
+#' @import dplyr
+#'
+#' @description using the package httr, update entries in certain fields in given rows of a table
+#'
+#' @param database_table_url NO TRAILING '/'. eg "http://18.224.181.136/api/v1/QualityAssess"
+#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
+#' @param update_df a dataframe, preferrably a tibble, already read in, subsetted. Columns must be correct data type for db table
+#' @param id_col name of the id column of the table. this number will be appended to the url to create the uri for the record
+#'
+#' @return a list of httr::response() objects
+#'
+#' @export
+patchTable = function(database_table_url, auth_token, update_df, id_col){
+
+
+  # send each column to the count table of the database
+  res_list = list()
+  for (i in seq(1,nrow(update_df))){
+
+    id = update_df[[i,id_col]]
+    row_as_list = jsonlite::toJSON(as.list(dplyr::select(update_df[i,], -id_col)), auto_unbox = TRUE, pretty=TRUE)
+
+    url = paste(database_table_url, paste0(as.character(id), "/"), sep="/")
+
+    res = PATCH(url=url,
+               add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+               content_type("application/json"),
+               body=row_as_list,
+               encode="json")
+
+    res_list[[as.character(id)]] = res
+
+  }
+  res_list
 }

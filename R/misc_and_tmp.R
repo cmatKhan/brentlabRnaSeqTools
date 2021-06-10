@@ -1,11 +1,7 @@
 #' progressively remove max IQR sample and recalculate
 #'
-#'
-#'
-#'
-#'
-#'
-#'
+#' @param sample_set the metadata
+#' @param logged_norm_counts counts on log2 scale and normalized
 #'
 #'@export
 removeOneRedoIqr = function(sample_set, logged_norm_counts){

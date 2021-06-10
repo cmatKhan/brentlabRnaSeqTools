@@ -2,9 +2,9 @@
 % Please edit documentation in R/BamFunctions.R
 \name{featureGRanges}
 \alias{featureGRanges}
-\title{Given a GenomicFeatuers annotation_db and a gene_id, extract an GRanges object of the cds}
+\title{Given a GenomicFeatures annotation_db and a gene_id, extract an GRanges object of the cds}
 \usage{
-exon_ranges = featureGRanges(kn99_db, "CKF44_05222", "exon")
+featureGRanges(annotation_db, gene_id, feature)
 }
 \arguments{
 \item{annotation_db}{a GenomicFeatures db. You can either get this from the bioconductor resources, or create your own with a gtf}
@@ -17,8 +17,8 @@ exon_ranges = featureGRanges(kn99_db, "CKF44_05222", "exon")
 an IRanges object of the given gene's exons
 }
 \description{
-Given a GenomicFeatuers annotation_db and a gene_id, extract an GRanges object of the cds
+Given a GenomicFeatures annotation_db and a gene_id, extract an GRanges object of the cds
 }
 \references{
-GRanges, GenomicFeatures
+GenomicRanges::GRanges, GenomicFeatures
 }

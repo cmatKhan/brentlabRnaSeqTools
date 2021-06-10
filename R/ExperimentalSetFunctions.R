@@ -1,5 +1,7 @@
 #' filter combined_df for environmental perturbation sample set
 #'
+#' @import dplyr
+#'
 #' @param combined_df the combined tables of the database, returned directly from getMetadata() (meaning, the df hasn't been augmented after pulling from the database)
 #'
 #' @return environmental pertubation set
@@ -34,6 +36,8 @@ createEnvPertSet = function(combined_df){
 
 
 #' The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single KO only
+#'
+#' @import dplyr
 #'
 #' @param metadata is the combined tables of the metadata database
 #' @param grant_df is the 2016 grant summary TODO: put this in DATA
@@ -90,6 +94,8 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
 }
 
 #' The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single and double KO
+#'
+#' @import dplyr
 #'
 #' @param metadata is the combined tables of the metadata database
 #' @param grant_df is the 2016 grant summary TODO: put this in DATA

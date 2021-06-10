@@ -7,7 +7,12 @@
 \url{https://rpostgres.r-dbi.org/}
 }
 \usage{
-kn99_database = connectToDatabase(database_urls$kn99_host, database_urls$kn99_db_name, Sys.getenv("db_user"), Sys.getenv("db_password"))
+connectToDatabase(
+  database_host,
+  database_name,
+  database_user,
+  database_password
+)
 }
 \arguments{
 \item{database_host}{if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com}

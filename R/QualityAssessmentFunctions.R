@@ -1,8 +1,12 @@
 #'
 #' get total protein coding count from count dataframe
+#'
+#' @import dplyr
+#'
 #' @description given a count dataframe with gene_ids as rownames and quantification in a column called raw_counts, return sum of protein coding genes
 #'
 #' @param counts a dataframe with gene_ids in the rownames and (at minimum) a quantification column called raw_counts
+#' @param protein_coding_gene_ids a list of gene ids considered protein coding (must correspond with counts rownames)
 #'
 proteinCodingCount = function(counts, protein_coding_gene_ids){
   sum(counts[protein_coding_gene_ids,'raw_counts'])
@@ -23,6 +27,9 @@ qualityAssessmentFilter = function(metadata){
 }
 
 #' select fastqFileName, fastqFileNumber, and a pre-determined set of QC columns from a metadata df
+#'
+#' @import dplyr
+#'
 #' @note the column names for the metadata will be cast to upper and returned in upper
 #' @note must include Interquartile range. Think about removing this -- user could merge with IQR df after selecting these cols
 #'
@@ -59,6 +66,10 @@ selectQaColumns = function(metadata){
 
 #'
 #' create a sqlite database to hold the 'custom' qc data
+#'
+#' @import dplyr
+#' @import RSQLite
+#' @import glue
 #'
 #' @param database_dirpath path to containing directory of new qc database
 #'
@@ -127,6 +138,9 @@ createQCdatabase = function(database_dirpath){
 
 #'
 #' calcluate genotype and marker coverages for a given metadata df
+#'
+#' @import dplyr
+#'
 #' @description this produces a sheet that can be used to fill the 'custom' qc table for the brentlab kn99 and yeast databases
 #'
 #' @param metadata_df a metadata sheet with at least the columns fastqFileName, genotype1, genotype2, runNumber, libraryProtocol
@@ -182,8 +196,9 @@ qcGenotypeAndMarkerCoverage <- function(metadata_df, annote_db, bam_prefix, bam_
 #' calculate log2cpm for a given locus
 #'
 #' @param bam_path path to bam file. Note: the index with extension .bai also must exist
-#' @param locus_granges a granges object specifying the locus over which to count
 #' @param strandedness the strandedness of the library
+#' @param locus_granges a granges object specifying the locus over which to count
+#' @param lib_size the number of reads in the library
 #'
 #' @return either 0, if there are no counts, or the log2cpm of the counts over the locus. counting is done via the same
 #'         method as default HTSeq
@@ -200,12 +215,12 @@ locusLog2Cpm = function(bam_path, strandedness, locus_granges, lib_size){
   ifelse(locus_counts == 0, 0, log2(locus_counts *(lib_size/1e6)) )
 }
 
-extractNextflowQa = function(){
-
-  # regex to remove samtools_idxstats
-  # multiqc_regex = "^((?!idxstats).)*$"
-  # regex to extract the qc to send to DB
-  # "multiqc_(samtools|rsem|rseq).+$"
-
-  # join list of dfs plyr::join_all()
-}
+# extractNextflowQa = function(){
+#
+#   # regex to remove samtools_idxstats
+#   # multiqc_regex = "^((?!idxstats).)*$"
+#   # regex to extract the qc to send to DB
+#   # "multiqc_(samtools|rsem|rseq).+$"
+#
+#   # join list of dfs plyr::join_all()
+# }

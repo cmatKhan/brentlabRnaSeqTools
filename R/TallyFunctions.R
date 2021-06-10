@@ -1,10 +1,12 @@
+#' create 90 minute induction set tally
 #'
+#' @import dplyr
 #'
-#'
-#'
-#'
-#'
-#'
+#' @param induction_meta_qual the metadata of the entire set, unfiltered
+#' @param sorted_passing_induction_meta_qual metadata (with quality columns) filtered for manual/auto status
+#' @param iqr_fltr_rle_summary sorted_passing_meta_qual filtered for IQR
+#' @param grant_df the definition of the 90minuteInduction set. This object is available in the brentlabRnaSeqTools
+#'                 package
 #'
 #' @export
 createInductionSetTally = function(induction_meta_qual, sorted_passing_induction_meta_qual, iqr_fltr_rle_summary, grant_df){

@@ -1,4 +1,8 @@
 #' create deseq object with protocol specific size factors
+#'
+#' @import DESeq2
+#' @import dplyr
+#'
 #' @param passing_qc1_meta_qual can be any metadata df, but if you're going to run deseq you may want to filter it for passing samples first
 #' @param raw_counts a dataframe of raw counts with genes in the rows and samples in the columns. sample names must be the same as the fastqFileName
 #'                   column in passing_qc1_meta_qual.
@@ -43,8 +47,13 @@ deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw
 #'
 #' temporary function to examine only PBS samples, eg
 #'
+#' @import DESeq2
+#' @import dplyr
+#'
 #' @description gets all samples in qc_passing_metadata with size_factor_subset_param same as samples in row_filter
 #'
+#' @param qc1_passing_metadata metadata passing auto/manual flags
+#' @param raw_counts must include at least the sames in the metadata
 #' @param row_filter is a boolean vector, eg qc1_passing_env_pert_meta_qual$MEDIUM == "PBS"
 #' @param size_factor_subset_param eg LIBRARYDATE -- the column to group the samples for size factor calculation
 #' @return a list with slots metadata, raw_counts, size_factors
@@ -57,7 +66,8 @@ examineSingleGroupWithLibDateSizeFactors = function(qc1_passing_metadata, raw_co
 
   size_factor_grouping_vector = subset_of_interest[, size_factor_subset_param][[size_factor_subset_param]]
 
-  all_samples_with_subset_param_metadata = qc1_passing_metadata %>% filter(!! rlang::sym(size_factor_subset_param) %in% size_factor_grouping_vector)
+  all_samples_with_subset_param_metadata = qc1_passing_metadata %>%
+    filter(!! rlang::sym(size_factor_subset_param) %in% size_factor_grouping_vector)
 
   all_samples_with_subset_param_counts = raw_counts[, all_samples_with_subset_param_metadata$FASTQFILENAME]
 
@@ -95,11 +105,13 @@ examineSingleGroupWithLibDateSizeFactors = function(qc1_passing_metadata, raw_co
 
 #' remove some effects from the counts
 #'
-#' subtract effect from norm counts of a single factor from coef x design. coef is in normalized log space. dds must have been created with model.matrix
-#' @param deseq_object a deseq data object REQUIRED: the object must have been created with a model.matrix rather than a formula for the design argument
-#' @param col_indicies: a numeric vector corresponding to the column indicies of the batch parameters you'd like to remove
+#' @import DESeq2
 #'
-#' @usage removeParameterEffects(dds, seq(2:10))
+#' @description subtract effect from norm counts of a single factor from coef x design. coef is in normalized log space. dds must have been created with model.matrix
+#' @note works for both formula and model.matrix designs in the dds object
+#'
+#' @param deseq_object a deseq data object REQUIRED: the object must have been created with a model.matrix rather than a formula for the design argument
+#' @param col_indicies a numeric vector corresponding to the column indicies of the batch parameters you'd like to remove
 #'
 #' @return a log2 scale gene by samples matrix with desired effects removed
 #'
@@ -125,23 +137,3 @@ removeParameterEffects = function(deseq_object, col_indicies){
   return(log_norm_counts - (coefficients %*% t(batch_effect_matrix)))
 
 }
-
-
-
-# update this function to the below. In specific sets, maybe maybe a wrapper to this that takes the dds, but this allows for more flexibility
-
-#'
-#'
-#' @param effects_to_remove calculated similar to this. note -1 in the column indexing means that the intercept effect is retained in the data: (coef(deseq_object)[,-1] %*% t(design_matrix_of_effects_to_remove_with_intercept[,-1])
-#'
-#'
-#'
-# removeParameterEffects = function(counts, effects_to_remove){
-#
-#   coefficients = coef(deseq_object)
-#   log_norm_counts = log2(counts(deseq_object, normalized=TRUE)+1) # note psuedocount
-#   # coefficients is dim gene x features(including intercept, which is dropped)
-#   # design_matrix is dim sample x features to remove (plus one, for the intercept, which is removed below)
-#   return(log_norm_counts - effects_to_remove))
-#
-# }

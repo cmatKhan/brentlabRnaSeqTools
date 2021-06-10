@@ -9,9 +9,9 @@ runSVA(raw_counts, null_model_matrix, full_model_matrix)
 \arguments{
 \item{raw_counts}{raw gene counts in the shape gene x samples where ncols matches nrow of metadata (samples == samples)}
 
-\item{metadata}{metadata in the shape samples x parameters where the columns are features of the data (eg, libraryDate, RIN, etc)}
+\item{null_model_matrix}{a model matrix respresenting only the batch effects. Could possibly be intercept only}
 
-\item{known_covariate_formula}{eg ~Condition+Cell, passed as an R formula}
+\item{full_model_matrix}{the full model describing the experiment. Critically, this includes the parameter of interest}
 }
 \description{
 run SVA

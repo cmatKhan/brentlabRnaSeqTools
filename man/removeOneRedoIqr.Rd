@@ -6,6 +6,11 @@
 \usage{
 removeOneRedoIqr(sample_set, logged_norm_counts)
 }
+\arguments{
+\item{sample_set}{the metadata}
+
+\item{logged_norm_counts}{counts on log2 scale and normalized}
+}
 \description{
 progressively remove max IQR sample and recalculate
 }

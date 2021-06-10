@@ -4,16 +4,19 @@
 \alias{removeParameterEffects}
 \title{remove some effects from the counts}
 \usage{
-removeParameterEffects(dds, seq(2:10))
+removeParameterEffects(deseq_object, col_indicies)
 }
 \arguments{
 \item{deseq_object}{a deseq data object REQUIRED: the object must have been created with a model.matrix rather than a formula for the design argument}
 
-\item{col_indicies:}{a numeric vector corresponding to the column indicies of the batch parameters you'd like to remove}
+\item{col_indicies}{a numeric vector corresponding to the column indicies of the batch parameters you'd like to remove}
 }
 \value{
 a log2 scale gene by samples matrix with desired effects removed
 }
 \description{
 subtract effect from norm counts of a single factor from coef x design. coef is in normalized log space. dds must have been created with model.matrix
+}
+\note{
+works for both formula and model.matrix designs in the dds object
 }

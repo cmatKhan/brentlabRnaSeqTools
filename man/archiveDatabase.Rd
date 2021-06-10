@@ -23,6 +23,8 @@ archiveDatabase(
 \item{database_password}{password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info}
 
 \item{output_dir}{where to deposit a subdirectory, named by todays date in this format: 20210407, with the tables and combined_df inside. eg a mounted local directory /mnt/htcf_lts/crypto_database_archive/ --> /lts/mblab/Crypto/rnaseq_data/crypto_database_archive}
+
+\item{archive_counts_flag}{boolean indicating whether or not to save the counts. default is TRUE}
 }
 \value{
 None, writes a directory called <today's date> with tables and combined_df as .csv to output_dir

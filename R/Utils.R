@@ -1,7 +1,7 @@
 #'
 #' test if argument is numeric
 #' @description copied directly from the limma codebase
-#' @param any_object any R object
+#' @param x any R object
 #' @details copied from the limma docs: This function is used to check the validity of arguments for numeric functions. It is an attempt to emulate the behavior of internal generic math functions. IsNumeric differs from is.numeric in that data.frames with all columns numeric are accepted as numeric.
 #'
 #' @export
@@ -11,6 +11,7 @@ isNumeric = function (x) {
 
 #'
 #' correct run number to add leading zero where approprirate
+#' @param run_number a run number, most likely from the metadata runNumber field
 #'
 #' @export
 getRunNumberLeadingZero = function(run_number){
@@ -42,7 +43,12 @@ testBamPath = function(metadata_df){
 
 #'
 #' read in columnar data
+#'
+#' @import dplyr
+#'
 #' @description given a csv, tsv or excel sheet, use the right function to read in the data
+#'
+#' @param path path to a csv, tsv or xlsx
 #'
 #' @export
 readInData = function(path){

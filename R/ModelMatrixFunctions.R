@@ -57,10 +57,13 @@ createNinetyMinInductionModelMatrix = function(metadata_df){
 
 
 #' filter low replicate parameters from metadata
+#'
+#' @import dplyr
+#'
 #' @description given a model formula, remove samples with less than a specified number of replicates from the metadata
 #'
 #' @param metadata_df a data frame that contains at least the model paramters of interest
-#' @param formula an R formula, eg ~libraryDate+treatment, of parameters contained in the metadata_df
+#' @param design_formula an R formula, eg ~libraryDate+treatment, of parameters contained in the metadata_df
 #' @param replicate_threshold the number of replicates below which samples will be removed. Default is 2
 #'
 #' @return the input metadata with samples in replicate groups with less than the specified thershold filtered out

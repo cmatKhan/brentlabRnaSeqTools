@@ -9,9 +9,9 @@ fltrLowReplicateParams(metadata_df, design_formula, replicate_threshold = 2)
 \arguments{
 \item{metadata_df}{a data frame that contains at least the model paramters of interest}
 
-\item{replicate_threshold}{the number of replicates below which samples will be removed. Default is 2}
+\item{design_formula}{an R formula, eg ~libraryDate+treatment, of parameters contained in the metadata_df}
 
-\item{formula}{an R formula, eg ~libraryDate+treatment, of parameters contained in the metadata_df}
+\item{replicate_threshold}{the number of replicates below which samples will be removed. Default is 2}
 }
 \value{
 the input metadata with samples in replicate groups with less than the specified thershold filtered out
