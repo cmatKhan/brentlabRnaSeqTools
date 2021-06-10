@@ -2,7 +2,7 @@
 % Please edit documentation in R/DeseqFunctions.R
 \name{deseqObjectWithProtocolSpecificSizeFactors}
 \alias{deseqObjectWithProtocolSpecificSizeFactors}
-\title{Create a deseq data object with library protocol specific size factors}
+\title{create deseq object with protocol specific size factors}
 \usage{
 deseqObjectWithProtocolSpecificSizeFactors(passing_qc1_meta_qual, raw_counts)
 }
@@ -16,5 +16,5 @@ column in passing_qc1_meta_qual.}
 a deseq data object with size factors calculated within the library protocol groups
 }
 \description{
-Create a deseq data object with library protocol specific size factors
+create deseq object with protocol specific size factors
 }

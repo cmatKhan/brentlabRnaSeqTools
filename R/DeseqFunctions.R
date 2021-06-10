@@ -1,37 +1,4 @@
-# group1=c("IPSC_ASDDM",
-#          "IPSC_ASDDM",
-#          "IPSC_ASDN",
-#          "NPC_ASDDM",
-#          "NPC_ASDDM",
-#          "NPC_ASDN")
-# group2=c("IPSC_ASDN",
-#          "IPSC_TDN",
-#          "IPSC_TDN",
-#          "NPC_ASDN",
-#          "NPC_TDN",
-#          "NPC_TDN")
-#
-# comparisons=c("IPSC_ASDDM_ASDN",
-#               "IPSC_ASDDM_TDN",
-#               "IPSC_ASDN_TDN",
-#               "NPC_ASDDM_ASDN",
-#               "NPC_ASDDM_TDN",
-#               "NPC_ASDN_TDN")
-#
-# ##get the results for the various contrasts
-# numcomparisons=length(comparisons)
-# for(i in seq(1,numcomparisons))
-# {
-#   res=results(dds, contrast=c("Group", group1[i],group2[i]),parallel=TRUE)
-#   res$logPadj=-1*log10(res$padj)
-#   res=as.data.frame(res)
-#   res=na.omit(res)
-#   print(comparisons[i])
-#   print(res['ENSG00000196776.16-CD47',])
-# }
-
-#' Create a deseq data object with library protocol specific size factors
-#'
+#' create deseq object with protocol specific size factors
 #' @param passing_qc1_meta_qual can be any metadata df, but if you're going to run deseq you may want to filter it for passing samples first
 #' @param raw_counts a dataframe of raw counts with genes in the rows and samples in the columns. sample names must be the same as the fastqFileName
 #'                   column in passing_qc1_meta_qual.
@@ -125,3 +92,56 @@ examineSingleGroupWithLibDateSizeFactors = function(qc1_passing_metadata, raw_co
 
 
 }
+
+#' remove some effects from the counts
+#'
+#' subtract effect from norm counts of a single factor from coef x design. coef is in normalized log space. dds must have been created with model.matrix
+#' @param deseq_object a deseq data object REQUIRED: the object must have been created with a model.matrix rather than a formula for the design argument
+#' @param col_indicies: a numeric vector corresponding to the column indicies of the batch parameters you'd like to remove
+#'
+#' @usage removeParameterEffects(dds, seq(2:10))
+#'
+#' @return a log2 scale gene by samples matrix with desired effects removed
+#'
+#' @export
+removeParameterEffects = function(deseq_object, col_indicies){
+
+  # if the design(dds) is a formula
+  if(is_formula(design(deseq_object))){
+    model_matrix = model.matrix(design(deseq_object), colData(deseq_object))
+  } else if(is.matrix(design(deseq_object))){
+    model_matrix = design(deseq_object)
+  } else{
+    stop("design(deseq_object) is not recognized as a formula or matrix")
+  }
+
+  coefficients = coef(deseq_object)[,col_indicies]
+  batch_effect_matrix = model_matrix[,col_indicies]
+
+  log_norm_counts = log2(counts(deseq_object, normalized=TRUE)+1) # note psuedocount
+
+  # coefficients is dim gene x features
+  # design_matrix is dim sample x features to remove
+  return(log_norm_counts - (coefficients %*% t(batch_effect_matrix)))
+
+}
+
+
+
+# update this function to the below. In specific sets, maybe maybe a wrapper to this that takes the dds, but this allows for more flexibility
+
+#'
+#'
+#' @param effects_to_remove calculated similar to this. note -1 in the column indexing means that the intercept effect is retained in the data: (coef(deseq_object)[,-1] %*% t(design_matrix_of_effects_to_remove_with_intercept[,-1])
+#'
+#'
+#'
+# removeParameterEffects = function(counts, effects_to_remove){
+#
+#   coefficients = coef(deseq_object)
+#   log_norm_counts = log2(counts(deseq_object, normalized=TRUE)+1) # note psuedocount
+#   # coefficients is dim gene x features(including intercept, which is dropped)
+#   # design_matrix is dim sample x features to remove (plus one, for the intercept, which is removed below)
+#   return(log_norm_counts - effects_to_remove))
+#
+# }

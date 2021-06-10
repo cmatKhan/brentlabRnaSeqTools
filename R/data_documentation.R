@@ -12,3 +12,10 @@
 #' }
 #' @source \url{https://rnaseq-databases-documentation.readthedocs.io/en/latest/}
 "database_info"
+
+#'
+#' A named list containing a run number without a leading zero, eg 647, with the value being the same runnumber with
+#' a leading 0, eg 0647.
+#' @description this is best remedied in the database itself by forcing the column to be a string and adding the 0s
+#'
+"run_numbers_with_leading_zero"

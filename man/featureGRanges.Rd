@@ -4,7 +4,7 @@
 \alias{featureGRanges}
 \title{Given a GenomicFeatuers annotation_db and a gene_id, extract an GRanges object of the cds}
 \usage{
-exon_ranges = exonRantes(kn99_db, "CKF44_05222")
+exon_ranges = featureGRanges(kn99_db, "CKF44_05222", "exon")
 }
 \arguments{
 \item{annotation_db}{a GenomicFeatures db. You can either get this from the bioconductor resources, or create your own with a gtf}
@@ -20,5 +20,5 @@ an IRanges object of the given gene's exons
 Given a GenomicFeatuers annotation_db and a gene_id, extract an GRanges object of the cds
 }
 \references{
-GRanges, GRanges, GenomicFeatures
+GRanges, GenomicFeatures
 }

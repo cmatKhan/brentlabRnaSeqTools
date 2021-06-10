@@ -35,14 +35,6 @@ getMetadata = function(database_host, database_name, database_user, database_pas
 
   metadata_df = as_tibble(joined_meta_tables)
 
-  # TODO fix merging above so that column names aren't duplicated in qualityAssess table (fastqFileName in both)
-  # deal idiosyncratically with instances in which fastqFiles and qualityAssess fastqFileName may not overlap -- this shouldn't happen, really -- need to fix in database
-
-  # note: there are conflicts in dependencies, hence explicitely calling select and rename. see here for rename https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist
-  metadata_df = metadata_df %>%
-    dplyr::select(-fastqFileName.y) %>%
-    plyr::rename(c(fastqFileName.x = 'fastqFileName'))
-
   dbDisconnect(db)
 
   return(metadata_df)
@@ -116,7 +108,6 @@ archiveDatabase = function(database_host, database_name, database_user, database
 
   dbDisconnect(db)
 
-
 }
 
 #' Connect to a remote postgresql database
@@ -140,4 +131,193 @@ connectToDatabase = function(database_host, database_name, database_user, databa
             user = database_user,
             password = database_password)
 
+}
+
+#'
+#' list tables in databse
+#' @param db a connection to the database
+#' @seealso \url{https://www.postgresqltutorial.com/postgresql-show-tables/}
+#' @return all tables in database
+#' @export
+listTables = function(db){
+  dbGetQuery(db, "SELECT *
+                  FROM pg_catalog.pg_tables
+                  WHERE schemaname != 'pg_catalog' AND
+                  schemaname != 'information_schema';")
+}
+
+#'
+#' get (via a http POST request) your user authentication token from the database
+#' @param url check the database_info variable. It should be under database_info$organism_auth_url. Otherwise,
+#'            the path to the authentication endpoint
+#' @param username a valid username for the database. If you don't have one, then you'll need to ask for one to be created
+#' @param password password associated with your username
+#'
+#' @note do not save your auth token in a public repository. For example, you might put it in your .Renviron and then make sure
+#'       that your .Renviron is in your .gitignore. Otherwise, save it outside of a github tracked directory or otherwise ensure
+#'       that it will not be pushed up to github
+#'
+#' @return the auth token associated with the username and password
+#'
+#' @export
+getUserAuthToken = function(url, username, password){
+
+  # see package httr for help
+  token_response = POST(url=url, body=list(username=username, password=password), encode='json')
+
+  if( http_status(token_response)$category == "Success" ){
+    message("You might want to put your token in your .Renviron. If you do, please make sure the .Renviron file is in your .gitignore")
+    httr::content(token_response)$token
+  } else{
+    message("There was a problem getting your token:")
+    message(http_status(token_response)$message)
+  }
+}
+
+
+#'
+#' post counts to database
+#'
+#' @description using the package httr, post the raw count .csv, which is the compiled counts for a given run, to the database
+#'
+#' @param database_counts_url eg paste(database_info$kn99_base_url, "Counts/", sep="/")
+#' @param run_number the run number of this counts sheet -- this is important b/c fastqFileNames aren't necessarily unique outside of their runs
+#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
+#' @param new_counts_path path to the new counts csv
+#' @param fastq_table a recent pull of the database fastq table
+#' @param count_file_suffix the suffix appended to the fastqFileName in the count file column headings. default is "_read_count.tsv"
+#'
+#' @return a list of httr::response() objects
+#'
+#' @export
+postCounts = function(database_counts_url, run_number, auth_token, new_counts_path, fastq_table, count_file_suffix = "_read_count.tsv"){
+
+  # fastqFileNames may not be unique outside of their run
+  fastq_table = filter(fastq_table, runNumber == run_number)
+  # see utils
+  count_df = brentlabRnaSeqTools::readInData(new_counts_path)
+
+  # ensure that count_df is a dataframe of some sort
+  stopifnot(sum(class(count_df) == "data.frame") > 0)
+
+  # remove the gene_ids
+  count_df = count_df[colnames(count_df) != 'gene_id']
+  # remove filename suffix from colnames, leaving just the fastqFileName behind
+  colnames(count_df) = str_remove(colnames(count_df), count_file_suffix)
+
+  # remove suffixes from the fastqfiles if they exist
+  fastq_table$fastqFileName = str_remove(fastq_table$fastqFileName, ".fastq.gz")
+
+  # halt if there are sample names in the count_df that are not in the database
+  stopifnot(setdiff(colnames(count_df), fastq_table$fastqFileName) == 0)
+
+  # create named list with structure list(fastqFileName = fastqFileNumber, ...)
+  fastqFileNumber_lookup_list = pull(fastq_table, fastqFileNumber)
+  names(fastqFileNumber_lookup_list) = pull(fastq_table, fastqFileName)
+  # filter to just those in count_df
+  fastqFileNumber_lookup_list = fastqFileNumber_lookup_list[names(fastqFileNumber_lookup_list) %in% colnames(count_df)]
+
+  # check that we still have the same number of samples
+  stopifnot(length(fastqFileNumber_lookup_list) == length(colnames(count_df)))
+
+  # send each column to the count table of the database
+  res_list = list()
+  for (column in colnames(count_df)){
+    counts = list(as.integer(pull(count_df, column)))
+    names(counts) = column
+
+    post_body = jsonlite::toJSON(list(fastqFileNumber = fastqFileNumber_lookup_list[[column]],
+                     rawCounts = counts), auto_unbox = TRUE)
+
+    res = POST(url=database_counts_url,
+        add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+        content_type("application/json"),
+        body=post_body,
+        encode='json')
+
+    res_list[[column]] = res
+
+  }
+  res_list
+}
+
+#'
+#' post new qc sheet to database
+#'
+#' @description using the package httr, post the new qc sheet to the database
+#'
+#' @note there can be problems with dependencies and the rename function. this is working for now,
+#' but see here for more info \url{https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist}
+#'
+#' @param database_qc_url eg paste(database_info$kn99_base_url, "QualityAssessment/", sep="/")
+#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken
+#' @param run_number the run number of this qc sheet -- this is important b/c fastqFileNames aren't necessarily unique
+#' outside of their runs
+#' @param new_qc_path path to the new counts csv
+#' @param fastq_table a recent pull of the database fastq table
+#'
+#' @return a list of httr::response() objects
+#'
+#' @export
+postQcSheet = function(database_qc_url, auth_token, run_number, new_qc_path, fastq_table) {
+
+  # fastqFileNames may not be unique outside of their run
+  fastq_table = filter(fastq_table, runNumber == run_number)
+
+  new_qc_df = brentlabRnaSeqTools::readInData(new_qc_path)
+
+  new_qc_df = new_qc_df %>%
+    dplyr::rename(fastqFileName = FASTQFILENAME) %>%
+    dplyr::rename(librarySize = LIBRARY_SIZE) %>%
+    dplyr::rename(effectiveLibrarySize = EFFECTIVE_LIBRARY_SIZE) %>%
+    dplyr::rename(effectiveUniqueAlignment = EFFECTIVE_UNIQUE_ALIGNMENT) %>%
+    dplyr::rename(effectiveUniqueAlignmentPercent = EFFECTIVE_UNIQUE_ALIGNMENT_PERCENT) %>%
+    dplyr::rename(multiMapPercent = MULTI_MAP_PERCENT) %>%
+    dplyr::rename(proteinCodingTotal = PROTEIN_CODING_TOTAL) %>%
+    dplyr::rename(proteinCodingTotalPercent = PROTEIN_CODING_TOTAL_PERCENT) %>%
+    dplyr::rename(proteinCodingCounted = PROTEIN_CODING_COUNTED) %>%
+    dplyr::rename(proteinCodingCountedPercent = PROTEIN_CODING_COUNTED_PERCENT) %>%
+    dplyr::rename(ambiguousFeaturePercent = AMBIGUOUS_FEATURE_PERCENT) %>%
+    dplyr::rename(noFeaturePercent = NO_FEATURE_PERCENT) %>%
+    dplyr::rename(intergenicCoverage = INTERGENIC_COVERAGE) %>%
+    dplyr::rename(notAlignedTotalPercent = NOT_ALIGNED_TOTAL_PERCENT) %>%
+    dplyr::rename(genotype1Coverage = GENOTYPE1_COVERAGE) %>%
+    dplyr::rename(genotype1Log2cpm = GENOTYPE1_LOG2CPM) %>%
+    dplyr::rename(genotype2Coverage = GENOTYPE2_COVERAGE) %>%
+    dplyr::rename(genotype2Log2cpm = GENOTYPE2_LOG2CPM) %>%
+    dplyr::rename(overexpressionFOW = OVEREXPRESSION_FOW) %>%
+    dplyr::rename(natCoverage = NAT_COVERAGE) %>%
+    dplyr::rename(natLog2cpm = NAT_LOG2CPM) %>%
+    dplyr::rename(g418Coverage = G418_COVERAGE) %>%
+    dplyr::rename(g418Log2cpm = G418_LOG2CPM) %>%
+    dplyr::rename(noMapPercent = NO_MAP_PERCENT) %>%
+    dplyr::rename(homopolyFilterPercent = HOMOPOLY_FILTER_PERCENT) %>%
+    dplyr::rename(readLengthFilterPercent = READ_LENGTH_FILTER_PERCENT) %>%
+    dplyr::rename(tooLowAqualPercent = TOO_LOW_AQUAL_PERCENT) %>%
+    dplyr::rename(rRnaPercent = rRNA_PERCENT) %>%
+    dplyr::rename(nctrRnaPercent = nctrRNA_PERCENT) %>%
+    dplyr::rename(autoStatus = STATUS) %>%
+    dplyr::rename(autoAudit = AUTO_AUDIT) %>%
+    dplyr::rename(autoStatusDecomp = STATUS_DECOMP)
+
+  # TODO this is copied from postCounts() -- split this off into its own function to avoid repeating
+  # remove suffixes from the fastqfiles if they exist
+  fastq_table$fastqFileName = str_remove(fastq_table$fastqFileName, ".fastq.gz")
+
+  new_qc_df = new_qc_df %>%
+    left_join(fastq_table %>%
+                filter(runNumber == run_number) %>%
+                select(fastqFileName, fastqFileNumber), by="fastqFileName") %>%
+    select(-fastqFileName)
+
+  # check that we still have the same number of samples
+  stopifnot(sum(is.na(new_qc_df$fastqFileNumber))==0)
+
+  post_body = jsonlite::toJSON(new_qc_df, auto_unbox = TRUE)
+
+  POST(url = database_qc_url,
+       add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+       content_type("application/json"),
+       body = post_body,
+       encode = 'json')
 }

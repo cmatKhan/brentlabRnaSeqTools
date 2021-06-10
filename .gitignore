@@ -4,6 +4,7 @@
 .Rproj.user
 .Rbuildignore
 .Rhistory
+.Renviron
 *.Rproj
 packrat/lib*/
 packrat/src/

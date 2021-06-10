@@ -1,11 +1,11 @@
 #' calculate RLE of a numeric dataframe
 #'
 #' @param counts_df gene by samples dataframe of raw counts or logged counts (see paramter logged)
-#' @param logged Default FALSE set to true if log2 transformed counts are passed
+#' @param log2_transformed_flag Default FALSE set to true if log2 transformed counts are passed
 #' @return rle dataframe with genes x samples. Values are the logged differences from the gene-wise medians
 #'
 #' @export
-calculateRLE = function(counts_df, logged = FALSE){
+calculateRLE = function(counts_df, log2_transformed_flag = FALSE){
 
   if(!isNumeric(counts_df)){
     stop("counts_df must have all numeric columns")
@@ -13,8 +13,8 @@ calculateRLE = function(counts_df, logged = FALSE){
 
   counts_df = as_tibble(counts_df)
 
-  # if logged==TRUE, re-assign counts_df to log2_counts_df. else, add a pseudocount and log2
-  ifelse(logged, assign('log2_counts_df', counts_df),  assign('log2_counts_df', log2(counts_df + 1)))
+  # if log2_transformed_flag==TRUE, re-assign counts_df to log2_counts_df. else, add a pseudocount and log2
+  ifelse(log2_transformed_flag, assign('log2_counts_df', counts_df),  assign('log2_counts_df', log2(counts_df + 1)))
 
   # calculate median expression for each gene across samples
   gene_wise_medians = apply(log2_counts_df, 1, median, na.rm=TRUE)
@@ -64,372 +64,28 @@ rleSummary = function(rle_table_full){
 
 } # end rleSummary()
 
-#' These are messy and need to be cleaned up, but are how i calculate rle by replicate group for the 90minInduction and env_pert NOTE: only 90minInduction is currently tested with new database
 #'
-#' @param meta_qual_df is a dataframe pulled from the database with biosample --> quality assess (name is remnant of old system)
-#' @param norm_counts from the deseq object
-#' @param output_dirpath where to put the rle results. i suggest making a directory like "rle" in your working directory
-#' @param protocol_selector whether or not to include library protocol in the replicate grouping
-#' @param already_logged_flag are counts logged? (note: deseq norm counts are not logged unless you log them yourself)
+#' calculate RLE by replicate groups
 #'
-#' @return None. writes to file
+#' @param replicates_sample_list a list of lists where each sublist represents a replicate group. Entries must be a metadata
+#'                               parameter, such as fastqFileName, that corresponds to the columns of the counts.
+#'                               Suggestion: use something like these dplyr functions to create the list of lists group_by() %>% group_split %>% pull(fastqFileName)
+#' @param gene_quants a gene x sample dataframe with values as some sort of gene quantification (eg normed counts, or log2(norm_counts) with some effect removed), possibly already logged (@see already_logged_flag)
+#' @param log2_transformed_flag a boolean where TRUE means the counts are already in log2 space
 #'
-#' @export
-extractRLEByReplicateGroup_90minInduction = function(meta_qual_df, norm_counts, output_dirpath, protocol_selector, already_logged_flag){
-
-  #print("CAUTION: split columns MUST BE categorial, and MUST BE factored")
-
-  dir.create(output_dirpath)
-
-  meta_qual_df$LIBRARYDATE = as.factor(as.Date(meta_qual_df$LIBRARYDATE))
-  meta_qual_df$MEDIUM = as.factor(meta_qual_df$MEDIUM)
-  meta_qual_df$TEMPERATURE = as.factor(meta_qual_df$TEMPERATURE)
-  meta_qual_df$ATMOSPHERE = as.factor(meta_qual_df$ATMOSPHERE)
-  meta_qual_df$TREATMENT = as.factor(meta_qual_df$TREATMENT)
-  meta_qual_df$OTHERCONDITIONS = as.factor(meta_qual_df$OTHERCONDITIONS)
-  meta_qual_df$TIMEPOINT = as.factor(meta_qual_df$TIMEPOINT)
-  meta_qual_df$LIBRARYPROTOCOL = as.factor(meta_qual_df$LIBRARYPROTOCOL)
-  meta_qual_df$GENOTYPE = as.factor(meta_qual_df$GENOTYPE)
-
-  for (genotype in unique(meta_qual_df$GENOTYPE)){
-    # filter out known strain/geno problems
-    genotype_filtered_df = meta_qual_df %>% filter(GENOTYPE == genotype)
-
-    other_cond_str = 'OTHERCONDITIONS'
-
-    if(protocol_selector){
-      replicate_split_meta_qual_list = split(genotype_filtered_df, f = list(genotype_filtered_df$MEDIUM, genotype_filtered_df$TEMPERATURE, genotype_filtered_df$ATMOSPHERE, genotype_filtered_df$TREATMENT, genotype_filtered_df$OTHERCONDITIONS, genotype_filtered_df$TIMEPOINT, genotype_filtered_df$LIBRARYPROTOCOL))
-    } else {
-      replicate_split_meta_qual_list = split(genotype_filtered_df, f = list(genotype_filtered_df$MEDIUM, genotype_filtered_df$TEMPERATURE, genotype_filtered_df$ATMOSPHERE, genotype_filtered_df$TREATMENT, genotype_filtered_df$OTHERCONDITIONS, genotype_filtered_df$TIMEPOINT))
-    }
-
-    gene_id_col = seq(1,nrow(norm_counts))
-    for (split_df in replicate_split_meta_qual_list){
-      # only take genotypes with replicates > 3
-      if (nrow(split_df) > 2){
-        medium = as.character(unique(split_df$MEDIUM))
-        temperature = as.character(unique(split_df$TEMPERATURE))
-        atmosphere = as.character(unique(split_df$ATMOSPHERE))
-        treatment = as.character(unique(split_df$TREATMENT))
-        other_conditions = as.character(unique(split_df$OTHERCONDITIONS))
-        timepoint = as.character(unique(split_df$TIMEPOINT))
-        protocol = as.character(unique(split_df$LIBRARYPROTOCOL))
-
-        ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
-        if (protocol_selector){
-          full_filename = paste(output_dirpath, paste(genotype,medium,temperature,atmosphere,treatment,other_conditions,timepoint,protocol, "full.csv", sep='_'), sep='/')
-          summary_filename = paste(output_dirpath, paste(genotype,medium,temperature,atmosphere,treatment,other_conditions,timepoint,protocol, "summary.csv", sep='_'), sep='/')
-        } else{
-          full_filename = paste(output_dirpath, paste(genotype,medium,temperature,atmosphere,treatment,other_conditions,timepoint, "full.csv", sep='_'), sep='/')
-          summary_filename = paste(output_dirpath, paste(genotype,medium,temperature,atmosphere,treatment,other_conditions,timepoint, "summary.csv", sep='_'), sep='/')
-        }
-
-        if (already_logged_flag == TRUE){
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
-          write.csv(as_tibble(fltr_rle_full), full_filename, row.names=FALSE)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write.csv(as_tibble(fltr_rle_summary), summary_filename, row.names=FALSE)
-
-        } else{
-          fltr_rle_full = calculateRLE(ftlr_norm_counts)
-          write.csv(as_tibble(fltr_rle_full), full_filename, row.names=FALSE)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write.csv(as_tibble(fltr_rle_summary), summary_filename, row.names=FALSE)
-        }
-      }
-    }
-  }
-}# end extractRLEByReplicateGroup()
-
-#' @export
-extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, protocol_selector, already_logged_flag){
-
-  dir.create(output_dirpath)
-
-  x = split(df, f = list(df$MEDIUM, df$TEMPERATURE, df$ATMOSPHERE, df$TREATMENT, df$OTHERCONDITIONS, df$TIMEPOINT, df$TREATMENT, df$TREATMENTCONC))
-
-  gene_id_col = seq(1,nrow(norm_counts))
-  for (split_df in x){
-    if (nrow(split_df) != 0){
-      # only take genotypes with replicates > 3
-      if (nrow(split_df) > 2){
-        medium = as.character(unique(split_df$MEDIUM))
-        temperature = as.character(unique(split_df$TEMPERATURE))
-        atmosphere = as.character(unique(split_df$ATMOSPHERE))
-        treatment = as.character(unique(split_df$TREATMENT))
-        other_conditions = as.character(unique(split_df$OTHERCONDITIONS))
-        timepoint = as.character(unique(split_df$TIMEPOINT))
-        protocol = as.character(unique(split_df$LIBRARYPROTOCOL))
-        treatment = as.character(unique(split_df$TREATMENT))
-        treatmentconc = as.character(unique(split_df$TREATMENTCONC))
-
-
-        full_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, treatment, treatmentconc, "full.csv", sep='_'), sep='/')
-        summary_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, treatment, treatmentconc, "summary.csv", sep='_'), sep='/')
-
-        ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
-        if (already_logged_flag){
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
-          write_csv(as_tibble(fltr_rle_full), full_filename)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
-
-        } else{
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, seq(1,nrow(norm_counts)))
-          write_csv(as_tibble(fltr_rle_full), full_filename)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
-        }
-      }
-    }
-  }
-}# end extractRLEByReplicateGroup()
-
-#' @export
-extractRLEByReplicateGroup_EnvPert_titrations = function(df, norm_counts, output_dirpath, protocol_selector, already_logged_flag){
-
-  dir.create(output_dirpath)
-
-  x = split(df, f = list(df$MEDIUM, df$TEMPERATURE, df$ATMOSPHERE, df$TREATMENT, df$TREATMENTCONC, df$OTHER_CONDITIONS, df$TIMEPOINT))
-
-  gene_id_col = seq(1,nrow(norm_counts))
-  for (split_df in x){
-    if (nrow(split_df) != 0){
-      # only take genotypes with replicates > 3
-      if (nrow(split_df) > 2){
-        medium = as.character(unique(split_df$MEDIUM))
-        temperature = as.character(unique(split_df$TEMPERATURE))
-        atmosphere = as.character(unique(split_df$ATMOSPHERE))
-        treatment = as.character(unique(split_df$TREATMENT))
-        other_conditions = as.character(unique(split_df$OTHERCONDITIONS))
-        timepoint = as.character(unique(split_df$TIMEPOINT))
-        protocol = as.character(unique(split_df$LIBRARYPROTOCOL))
-        treatment = as.character(unique(split_df$TREATMENT))
-        treatmentconc = as.character(unique(split_df$TREATMENTCONC))
-
-
-        full_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, treatment, treatmentconc, "full.csv", sep='_'), sep='/')
-        summary_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, treatment, treatmentconc, "summary.csv", sep='_'), sep='/')
-
-        ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
-        if (already_logged_flag){
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
-          write_csv(as_tibble(fltr_rle_full), full_filename)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
-
-        } else{
-          fltr_rle_full = calculateRLE(ftlr_norm_counts)
-          write_csv(as_tibble(fltr_rle_full), full_filename)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
-        }
-      }
-    }
-  }
-}# end extractRLEByReplicateGroup()
-
-#' @export
-extractRLEByReplicateGroup_EnvPert = function(df, norm_counts, output_dirpath, protocol_selector, already_logged_flag){
-
-  dir.create(output_dirpath)
-
-  x = split(df, f = list(df$MEDIUM, df$TEMPERATURE, df$ATMOSPHERE, df$TREATMENT, df$OTHER_CONDITIONS, df$TIMEPOINT))
-
-  gene_id_col = seq(1,nrow(norm_counts))
-  for (split_df in x){
-    if (nrow(split_df) != 0){
-      # only take genotypes with replicates > 3
-      if (nrow(split_df) > 2){
-        medium = as.character(unique(split_df$MEDIUM))
-        temperature = as.character(unique(split_df$TEMPERATURE))
-        atmosphere = as.character(unique(split_df$ATMOSPHERE))
-        treatment = as.character(unique(split_df$TREATMENT))
-        other_conditions = as.character(unique(split_df$OTHERCONDITIONS))
-        timepoint = as.character(unique(split_df$TIMEPOINT))
-        protocol = as.character(unique(split_df$LIBRARYPROTOCOL))
-
-
-        full_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, "full.csv", sep='_'), sep='/')
-        summary_filename = paste(output_dirpath, paste(medium,temperature,atmosphere,treatment,other_conditions,timepoint, "summary.csv", sep='_'), sep='/')
-
-        ftlr_norm_counts = norm_counts[,split_df$FASTQFILENAME]
-        if (already_logged_flag){
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, logged=TRUE)
-          write_csv(as_tibble(fltr_rle_full), full_filename)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
-
-        } else{
-          fltr_rle_full = calculateRLE(ftlr_norm_counts, seq(1,nrow(norm_counts)))
-          write_csv(as_tibble(fltr_rle_full), full_filename)
-
-          fltr_rle_summary = rleSummary(fltr_rle_full)
-          write_csv(as_tibble(fltr_rle_summary), summary_filename)
-        }
-      }
-    }
-  }
-}# end extractRLEByReplicateGroup()
-
-
-
+#' @references rlePlotCompareEffectRemoved() to plot the norm counts and removedEffect 'counts' on the same plot
 #'
-#'
-#'
-#'
-#'
+#' @return a list of dataframes for each replicate group in replicateS_sample_list, each with dimensions gene x sample. values are RLE of the gene in a given sample
 #'
 #' @export
-rleBoxplots= function(rle_table_full, meta_qual_df, fill_column, fill_column_colors, table_name, feature){
-  #' rle_table_full output of rleTableFull() above
-  #' meta_qual_df is a metadata + quality assess dataframe
-  #' table_name is the name of the graph
-  #' part of the table name, the feature
-  #' :params fill_column: column to color boxplots (make sure this column is factored)
-  #' :params fill_column_colors: named vector assigning colors to factor levels of fill_column
-  #' eg) c("0" = "#52854C", "1" = "#D16103")
-
-  df = stack(rle_table_full)
-  meta_qual_df$LIBRARYDATE = as.factor(meta_qual_df$LIBRARYDATE)
-
-  stacked_rle_meta_qual_df = df %>% left_join(meta_qual_df, by=c('ind'='FASTQFILENAME'), copy=TRUE)
-
-  ylim1 = boxplot.stats(df$values)$stats[c(1, 5)]
-
-  # order by different variables in metadata (eg library date) <-- TODO: make this option
-
-  # rle_boxplots = ggplot(stacked_rle_meta_qual_df, aes(reorder(ind, PROTEIN_CODING_COUNTED), values))+
-  #   geom_boxplot(outlier.shape=NA)+
-  #   coord_cartesian(ylim = ylim1*2.5)+
-  #   theme(axis.text.x=element_blank(),
-  #         axis.ticks.x=element_blank())+
-  #   xlab('Samples')+
-  #   ylab('Deviation from Median')+
-  #   ggtitle('90 Minute Induction RLE plots')
-  #
-  # plot(rle_boxplots)
+rleByReplicateGroup = function(replicates_vector, gene_quants, log2_transformed_flag){
 
 
-  rle_boxplots = ggplot(stacked_rle_meta_qual_df, aes(ind, values))+
-    geom_boxplot(outlier.shape=NA, aes(fill=!!rlang::sym(fill_column)))+
-    scale_colour_manual(values = fill_column_colors, aesthetics="fill")+
-    theme(axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())+
-    xlab('Samples')+
-    ylab('Deviation from Median')+
-    coord_cartesian(ylim = c(-3,3))+
-    scale_y_continuous(n.breaks = 20)+
-    geom_hline(yintercept = 0)+
-    ggtitle(paste0(table_name, '_', feature))+theme(legend.position = "none")
+  lapply(replicates_vector, function(x) calculateRLE(gene_quants[, x], log2_transformed_flag=log2_transformed_flag))
 
-  return(rle_boxplots)
-
-} # end rleBoxPlots()
-
-#' @export
-rleScatterPlots = function(rle_summary_df, color_col, title){
-  rle_scatter = ggplot(rle_summary_df, aes(ABS_SAMPLE_DEVIATION_MEDIAN, INTERQUARTILE_RANGE, color=!! rlang::sym(color_col)))+geom_point()+ggtitle(title) +xlim(0,1.5)+ylim(0,1.75)
-  rle_scatter = ggMarginal(rle_scatter, type="density")
-  #rle_scatter + ggMarginal(rle_scatter, type="density")
-  # pdf(title)
-  plot(rle_scatter)
-  # dev.off()
 }
 
-#' @export
-rleMedianBarPlot = function(rle_summary_df, title){
-  ggplot(rle_summary_df, aes(ABS_SAMPLE_DEVIATION_MEDIAN))+
-    geom_histogram()+ggtitle(title)+ylim(0,425)
-  # dev.off()
-}
-
-#' @export
-rleIQRBarPlot = function(rle_summary_df, title){
-  ggplot(rle_summary_df, aes(INTERQUARTILE_RANGE))+
-    geom_histogram()+ggtitle(title)+
-    scale_x_continuous(breaks = seq(0, 2, by = .1))+ylim(0,125)
-  # dev.off()
-}
-
-#' @export
-createRLEPlotsByReplicateGroup = function(rle_output_dir, meta_qual_df){
-  # TODO: SPECIFY NINETY MINUTE INDUCTION
-
-  genotype_rle_full_list = Sys.glob(paste0(rle_output_dir, '/*full*'))
-  genotype_rle_summary_list = Sys.glob(paste0(rle_output_dir, '/*summary*'))
-
-  list_names = str_extract(genotype_rle_full_list, 'CNAG_[[:digit:]]+.*')
-  list_names = str_remove(list_names, '_full.csv')
-
-  names(genotype_rle_full_list) = list_names
-  names(genotype_rle_summary_list) = list_names
-
-  genotype_rle_full_df_list = lapply(genotype_rle_full_list, read_csv)
-
-  plot_output_dir = paste(rle_output_dir, 'plots', sep='/')
-  dir.create(paste(rle_output_dir, 'plots', sep='/'))
-  # skip printing wildtype
-  for (i in seq(1, length(genotype_rle_full_df_list))){
-    # fill_column = "AUTO_AUDIT"
-    # fill_column_colors = c("0" = "#52854C", "1" = "#D16103")
-
-    fill_column = "LIBRARYDATE"
-    num_colors <- length(unique(meta_qual_df$LIBRARYDATE))
-    mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(num_colors)
-    names(mycolors) = as.character(unique(meta_qual_df$LIBRARYDATE))
-    fill_column_colors = mycolors
-
-    rle = rleBoxplots(genotype_rle_full_df_list[[i]], meta_qual_df, fill_column, fill_column_colors, "rle_boxplots", list_names[[i]])
-
-    pdf(paste(plot_output_dir, paste0(list_names[[i]], '.pdf'), sep='/'))
-    plot(rle)
-    dev.off()
-  }
-} # end createRLEPlotsByReplicateGroup()
-
-#' @export
-createRLEPlotsByReplicateGroup_envPert = function(rle_output_dir, meta_qual_df){
-
-
-  rle_full_list = Sys.glob(paste0(rle_output_dir, '/*full*'))
-  rle_summary_list = Sys.glob(paste0(rle_output_dir, '/*summary*'))
-
-  list_names = basename(rle_full_list)
-  list_names = str_remove(list_names, '_full.csv')
-
-  names(rle_full_list) = list_names
-  names(rle_summary_list) = list_names
-
-  rle_full_list = lapply(rle_full_list, read_csv)
-
-  plot_output_dir = paste(rle_output_dir, 'plots', sep='/')
-  dir.create(paste(rle_output_dir, 'plots', sep='/'))
-  # skip printing wildtype
-  for (i in seq(1, length(rle_full_list))){
-    # fill_column = "AUTO_AUDIT"
-    # fill_column_colors = c("0" = "#52854C", "1" = "#D16103")
-
-    fill_column = "LIBRARYDATE"
-    num_colors <- length(unique(meta_qual_df$LIBRARYDATE))
-    mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(num_colors)
-    names(mycolors) = as.character(unique(meta_qual_df$LIBRARYDATE))
-    fill_column_colors = mycolors
-
-    rle = rleBoxplots(rle_full_list[[i]], meta_qual_df, fill_column, fill_column_colors, "rle_boxplots", list_names[[i]])
-
-    pdf(paste(plot_output_dir, paste0(list_names[[i]], '.pdf'), sep='/'))
-    plot(rle)
-    dev.off()
-  }
-} # end createRLEPlotsByReplicateGroup()
+# TODO fix these plotting functions
 
 #'
 #' plot RLE for a given column filter (eg, metadata[metadata$MEDIUM == 'PBS']$FASTQFILENAME would give a list of fastqFileNames to filter)
@@ -440,7 +96,7 @@ createRLEPlotsByReplicateGroup_envPert = function(rle_output_dir, meta_qual_df){
 #' @return list with slots norm_count_rle and effect_removed_rle
 #'
 #' @export
-new_rlePlotFunc = function(deseq_object, model_matrix, column_filter, title){
+rlePlot = function(deseq_object, model_matrix, column_filter, title){
 
   norm_counts = counts(deseq_object, normalize=TRUE)
 
@@ -450,18 +106,22 @@ new_rlePlotFunc = function(deseq_object, model_matrix, column_filter, title){
 
   fltr_effect_removed_counts = effect_removed_counts[ ,column_filter]
 
-  norm_count_rle = new_rlePlot_helper(fltr_norm_counts, logged=FALSE, paste(title, 'Norm Counts', sep=" - "))
-  effect_removed_rle = new_rlePlot_helper(fltr_effect_removed_counts, logged=TRUE, paste(title, 'Effect Removed', sep=' - '))
+  norm_count_rle = rlePlot_helper(fltr_norm_counts, log2_transformed_flag=FALSE, paste(title, 'Norm Counts', sep=" - "))
+  effect_removed_rle = rlePlot_helper(fltr_effect_removed_counts, log2_transformed_flag=TRUE, paste(title, 'Effect Removed', sep=' - '))
 
   return (list('norm_count_rle' = norm_count_rle, 'effect_removed_rle' = effect_removed_rle))
 
 
 }
 
-new_rlePlot_helper = function(count_df, logged, title){
+#'
+#'
+#'
+#'
+rlePlot_helper = function(count_df, log2_transformed_flag, title){
 
 
-  rle_full_table = calculateRLE(count_df, logged=logged)
+  rle_full_table = calculateRLE(count_df, log2_transformed_flag=log2_transformed_flag)
 
   gene_id = read_tsv("~/Desktop/rnaseq_pipeline/rnaseq_pipeline/genome_files/KN99/KN99_gene_id_list.txt", col_names = 'gene_id')[1:6967,]
   rle_full_table$gene_id = gene_id
@@ -480,4 +140,55 @@ new_rlePlot_helper = function(count_df, logged, title){
     ggtitle(title)
 }
 
+#'
+#' plots output of rleSummaryByReplicateGroup
+#'
+#' @param norm_counts_rle output of calculateRLE (maybe one of the sublists in rleByReplicateGroup())
+#' @param removed_effect_rle see norm_counts_rle, but after removing some batch effects
+#' @param set_of_interest either the index of the replicate set of interest, or the name if the list is named
+#' @param metadata_df metadata with at least FASTQFILENAME and LIBRARYDATE
+#' @param title title of the plot
+#'
+#' @return a ggplot with both the norm counts (more transparent) and removedEffect 'counts' on the same plot
+#'
+#' @export
+rlePlotCompareEffectRemoved = function(norm_counts_rle, removed_effect_rle, metadata_df, title){
+
+  norm_counts_rle %>%
+    pivot_longer(colnames(.), names_to="FASTQFILENAME", values_to="RLE") %>%
+    mutate(quant_type="norm_counts") %>%
+    bind_rows(
+      (removed_effect_rle %>%
+         pivot_longer(colnames(.), names_to="FASTQFILENAME", values_to="RLE") %>%
+         mutate(quant_type="removed_effect"))) %>%
+    left_join(metadata_df) %>%
+    mutate(LIBRARYDATE = as.factor(LIBRARYDATE)) %>%
+    ggplot() +
+    geom_boxplot(aes(FASTQFILENAME, RLE, fill=LIBRARYDATE, color=quant_type, alpha=quant_type), outlier.shape = NA) +
+    scale_color_manual(values=c("#999999", "#000000")) +
+    scale_alpha_manual(values=c(.1, 1)) +
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())+
+    ylim(-3,3)+
+    ggtitle(title)
+
+}
+
+#'
+#' composite plot of all rle_stats in one plot
+#' @note no title on graphs. use the names of the returned object to title in presentation
+#'
+#' @param rle_df a samples x rle stats df with at minimum columns SAMPLE_DEVIATION_MEDIAN, ABS_SAMPLE_DEVIATION_MEDIAN, INTERQUARTILE_RANGE
+#'
+#' @return a plot with three horizontal panels for each of the rle stats
+#'
+# plotRLEhistograms = function(rle_df){
+#   rle_df %>%
+#     pivot_longer(-FASTQFILENAME, names_to="rle_stat", values_to="value") %>%
+#     mutate(rle_stat = factor(rle_stat, levels=c("SAMPLE_DEVIATION_MEDIAN", "ABS_SAMPLE_DEVIATION_MEDIAN", "INTERQUARTILE_RANGE"))) %>%
+#     ggplot() +
+#     geom_histogram(aes(value))+
+#     theme(axis.title.x=element_blank())+
+#     facet_wrap('rle_stat', scales="free_x", dir='v')
+# }
 

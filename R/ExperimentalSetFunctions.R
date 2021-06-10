@@ -1,29 +1,37 @@
 #' filter combined_df for environmental perturbation sample set
 #'
-#' @param combined_df the combined tables of the database
+#' @param combined_df the combined tables of the database, returned directly from getMetadata() (meaning, the df hasn't been augmented after pulling from the database)
 #'
 #' @return environmental pertubation set
 #'
 #' @export
 createEnvPertSet = function(combined_df){
-  env_pert_set = combined_df %>% filter( (treatment == "" | treatment == "cAMP" | treatment=="noTreatment" | is.na(treatment) ),
-                                        experimentDesign == 'Environmental_Perturbation',
-                                        purpose == "fullRNASeq", !is.na(fastqFileName),
-                                        genotype1=='CNAG_00000')
-  colnames(env_pert_set) = toupper(colnames(env_pert_set))
 
-  env_pert_set$TREATMENT = unfactor(env_pert_set$TREATMENT)
+  # filter
+  combined_df %>%
+    filter((treatment == "" | treatment == "cAMP" | treatment=="noTreatment" | is.na(treatment)),
+           (experimentDesign == 'Environmental_Perturbation' | experimentDesign == 'ep_cAMP_titration'),
+           purpose == "fullRNASeq",
+           !is.na(fastqFileName),
+           genotype1=='CNAG_00000') %>%
+    # cast timePoint from integer64 to integer
+    mutate(timePoint = as.integer(timePoint)) %>%
+    # replace empty strings in the following columns with NA
+    mutate(across(c("treatment", "otherConditions", "medium", "atmosphere", "temperature", "timePoint"), ~ifelse(.=="", NA, .) )) %>%
+    # replace NA with defined value
+    mutate(treatmentConc = replace_na(treatmentConc, 'noTreatmentConc')) %>%
+    mutate(pH = replace_na(pH, 'noPH')) %>%
+    mutate(treatment = replace_na(treatment, 'noTreatment')) %>%
+    mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions')) %>%
+    mutate(medium = replace_na(medium, 'noMedium')) %>%
+    mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
+    mutate(temperature = replace_na(temperature, 'noTemperature')) %>%
+    mutate(timePoint = replace_na(timePoint, 'noTimepoint')) %>%
+    # return with uppercase column names
+    rename_with(toupper)
 
-  env_pert_set = env_pert_set %>% dplyr::mutate(TREATMENT = replace_na(TREATMENT, 'noTreatment'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(iTREATMENTCONC = replace_na(TREATMENTCONC, 'noTreatmentConc'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(OTHER_CONDITIONS = replace_na(OTHERCONDITIONS, 'noOtherConditions'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(MEDIUM = replace_na(MEDIUM, 'noMedium'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(ATMOSPHERE = replace_na(ATMOSPHERE, 'noAtmosphere'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(TEMPERATURE = replace_na(TEMPERATURE, 'noTemperature'))
-  env_pert_set = env_pert_set %>% dplyr::mutate(TIMEPOINT = replace_na(TIMEPOINT, 'noTimepoint'))
-
-  return(env_pert_set)
 }
+
 
 #' The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single KO only
 #'

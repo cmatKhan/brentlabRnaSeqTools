@@ -4,12 +4,12 @@
 \alias{calculateRLE}
 \title{calculate RLE of a numeric dataframe}
 \usage{
-calculateRLE(counts_df, logged = FALSE)
+calculateRLE(counts_df, log2_transformed_flag = FALSE)
 }
 \arguments{
 \item{counts_df}{gene by samples dataframe of raw counts or logged counts (see paramter logged)}
 
-\item{logged}{Default FALSE set to true if log2 transformed counts are passed}
+\item{log2_transformed_flag}{Default FALSE set to true if log2 transformed counts are passed}
 }
 \value{
 rle dataframe with genes x samples. Values are the logged differences from the gene-wise medians

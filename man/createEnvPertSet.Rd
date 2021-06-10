@@ -7,7 +7,7 @@
 createEnvPertSet(combined_df)
 }
 \arguments{
-\item{combined_df}{the combined tables of the database}
+\item{combined_df}{the combined tables of the database, returned directly from getMetadata() (meaning, the df hasn't been augmented after pulling from the database)}
 }
 \value{
 environmental pertubation set
