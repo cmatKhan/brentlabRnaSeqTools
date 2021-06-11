@@ -2,7 +2,7 @@
 
 See [Online Documentation](https://rdrr.io/github/cmatKhan/brentlabRnaSeqTools/)
 
-all functions documentation can be accessed in RStudio with ?functionName
+all functions documentation can be accessed in RStudio with `?functionName`
 
 # Installation  
 In R, do the following:  
