@@ -1,0 +1,416 @@
+---
+title: "create_set"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{create_set}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+## Most of what you need will be loaded in brentlabRnaSeqTools already
+But if you do get an error, read it carefully to see if it is simply that you need to load another package
+```{r setup}
+library(brentlabRnaSeqTools)
+```
+## get the metadata and counts from the database
+You will need to ask for the login credentials for this step. Storing them in your .Renviron makes it easy, but also
+make sure that you are careful not to push them up to a remote repo
+```{r get metadata and counts, }
+metadata_df = getMetadata(database_info$kn99_host, 
+                          database_info$kn99_db_name, 
+                          Sys.getenv("DB_USERNAME"), 
+                          Sys.getenv("DB_PASSWORD"))
+
+# I do plan to make this part of the getMetaData() function, but it isn't yet
+metadata_df$fastqFileName = str_remove(metadata_df$fastqFileName, ".fastq.gz")
+
+raw_counts_df = getRawCounts(database_info$kn99_host, 
+                             database_info$kn99_db_name, 
+                             Sys.getenv("DB_USERNAME"), 
+                             Sys.getenv("DB_PASSWORD"))
+
+# subset to only protein coding
+raw_counts_df = raw_counts_df[1:6967,]
+```
+
+## filter the metadata
+```{r filter}
+subset_metadata = metadata_df %>%
+    # replace empty strings with NA
+    mutate_if(is.character, list(~na_if(.,""))) %>%
+    # replace NAs with string entry
+    mutate(perturbation1 = replace_na(perturbation1, "noPerturbation")) %>%
+    mutate(perturbation2 = replace_na(perturbation2, "noPerturbation")) %>%
+    mutate(treatment = replace_na(treatment, 'noTreatment')) %>%
+    mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions')) %>%
+    mutate(medium = replace_na(medium, 'noMedium')) %>%
+    mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
+    mutate(pH = replace_na(pH, 'noPh')) %>%
+    mutate(timePoint = as.integer(timePoint)) %>%
+    filter(medium %in% c("DMEM"),
+           temperature %in% c(37),
+           atmosphere %in% c("CO2"),
+           treatment %in% c("noTreatment"),
+           otherConditions %in% c("noOtherConditions"),
+           pH %in% c("noPh"),
+           timePoint %in% c(90),
+           strain != "TDY1993",
+           purpose=="fullRNASeq",
+           perturbation1 == "deletion" | perturbation1 == "noPerturbation",
+           !is.na(fastqFileName))
+```
+
+## look at what we got
+```{r take a looksee}
+
+df = tibble(doubles = nrow(subset_metadata %>% filter(!is.na(genotype2))),
+            overexpression = nrow(subset_metadata %>% filter(perturbation1 == "over")),
+            singles = nrow(subset_metadata %>% filter(is.na(genotype2), perturbation1 == "deletion")),
+            wt = nrow(subset_metadata %>% filter(genotype1 == "CNAG_00000"))
+            )
+
+print(df)
+```
+since I'm not evaluating this code for the vignette, this is what it looks like. If you copy and paste this code (after
+getting the login credentials, you can just run the code directly).
+
+doubles: 116  
+overexpression: 0 (purposefully filtered out due to linear dependence issue in model matrix)
+singles: 947  
+wt: 238  
+
+## filter for autoAudit status, though override this if manual pass == TRUE
+NOTE! this function currently casts the column names to uppers. I am going to be removing this -- previous, it was
+necessary b/c there were sometimes the same columns with different formatting. That can't happen anymore
+```{r filter auto or manual failing}
+
+passing_subset_metadata = qualityAssessmentFilter(subset_metadata)
+
+passing_subset_metadata = droplevels(passing_subset_metadata)
+
+```
+
+```{r count classes again}
+
+df = tibble(doubles = nrow(passing_subset_metadata %>% filter(!is.na(GENOTYPE2))),
+            overexpression = nrow(passing_subset_metadata %>% filter(PERTURBATION1 == "over")),
+            singles = nrow(passing_subset_metadata %>% filter(is.na(GENOTYPE2), PERTURBATION1 == "deletion")),
+            wt = nrow(passing_subset_metadata %>% filter(GENOTYPE1 == "CNAG_00000"))
+            )
+
+print(df)
+
+```
+doubles: 73  
+overexpression: 0  
+singles: 658  
+wt: 179  
+
+## figure out the design
+```{r}
+
+passing_subset_metadata_formatted = passing_subset_metadata %>%
+  mutate(genotype = paste(passing_subset_metadata$GENOTYPE1, 
+                          passing_subset_metadata$GENOTYPE2,
+                          sep="_")) %>%
+  mutate(genotype = str_remove(genotype, "_NA")) %>%
+  mutate(LIBRARYDATE = as.factor(LIBRARYDATE)) %>%
+  mutate(LIBRARYPROTOCOL = as.factor(LIBRARYPROTOCOL)) %>%
+  mutate(genotype = as.factor(genotype))
+
+passing_subset_metadata_formatted$LIBRARYDATE = relevel(passing_subset_metadata_formatted$LIBRARYDATE,
+                                              ref=min(levels(passing_subset_metadata_formatted$LIBRARYDATE)))
+
+passing_subset_metadata_formatted$genotype = relevel(passing_subset_metadata_formatted$genotype, 
+                                                     ref='CNAG_00000')
+
+passing_subset_metadata_formatted = droplevels(passing_subset_metadata_formatted)
+
+```
+
+## set design, filter out samples which occur in parameters with low replication
+```{r}
+design_formula = ~LIBRARYPROTOCOL + LIBRARYDATE + genotype
+
+# filter out samples which occur in replicate sets of less than 2 in any of the parameters of the model matrix
+fltr_passing_subset_metadata_formatted = fltrLowReplicateParams(passing_subset_metadata_formatted, design_formula)
+```
+
+## remove high dispersion genes
+```{r}
+# create list of high dispersion genes to filter out. Note: you'll need to get this from me for the time being
+
+old_protocol_high_disp_genes = read_csv("~/projects/brentlab/90minuteInduction/datafreeze_20210528/data/old_protocol_high_disp_genes.csv")$gene_ids
+
+new_protocol_high_disp_genes = read_csv("~/projects/brentlab/90minuteInduction/datafreeze_20210528/data/new_protocol_high_disp_genes.csv")$gene_ids
+
+high_disp_genes = union(old_protocol_high_disp_genes, new_protocol_high_disp_genes)
+
+full_gene_id_vector = read_csv("~/Desktop/rnaseq_pipeline/rnaseq_pipeline/genome_files/KN99/KN99_gene_id_list.txt", col_names = 'gene_id')$gene_id
+full_gene_id_vector = full_gene_id_vector[1:6967]
+
+fltr_passing_subset_counts = raw_counts_df[!full_gene_id_vector %in% high_disp_genes,fltr_passing_subset_metadata_formatted$FASTQFILENAME]
+```
+## attempt to make dds and deal with linear dependencies
+```{r}
+dds = DESeqDataSetFromMatrix(countData = fltr_passing_subset_counts,
+                             colData = fltr_passing_subset_metadata_formatted,
+                             design = design_formula)
+```
+Error in checkFullRank(modelMatrix) : the model matrix is not full rank, so the model cannot be fit as specified. One or more variables or interaction terms in the design formula are linear combinations of the others and must be removed. Please read the vignette section 'Model matrix not full rank': vignette('DESeq2')
+4.
+stop("the model matrix is not full rank, so the model cannot be fit as specified.\n One or more variables or interaction terms in the design formula are linear\n combinations of the others and must be removed.\n\n Please read the vignette section 'Model matrix not full rank':\n\n vignette('DESeq2')")
+3.
+checkFullRank(modelMatrix)
+2.
+DESeqDataSet(se, design = design, ignoreRank)
+1.
+DESeqDataSetFromMatrix(countData = fltr_passing_subset_counts, colData = fltr_passing_subset_metadata_formatted, design = design_formula)
+
+```{r}
+library(caret)
+model_matrix = model.matrix(design_formula, fltr_passing_subset_metadata_formatted)
+
+caret_output = findLinearCombos(model_matrix)
+```
+
+$linearCombos
+$linearCombos[[1]]
+ [1] 59  1  2 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58
+
+
+$remove
+[1] 59
+
+```{r}
+# we are filtering out this: "LIBRARYDATE2021-05-06", which is a 'new protocol' library date. Note that a
+# 'old protocol' date was also dropped
+augment_model_matrix = model_matrix[, -59]
+
+findLinearCombos(augment_model_matrix)
+```
+$linearCombos
+list()
+
+$remove
+NULL
+## get protocol specific size factors
+```{r create dds no sv with protocol specific size factors}
+# note: i am going to re-do this function so it only gives back the size factors. for now, it is purpose built for the 90minuteInduction
+size_factor_dds = deseqObjectWithProtocolSpecificSizeFactors(fltr_passing_subset_metadata_formatted, fltr_passing_subset_counts)
+
+size_factor_df = tibble(FASTQFILENAME = names(sizeFactors(dds)), size_factors = sizeFactors(dds))
+
+fltr_passing_subset_metadata_formatted_with_sizeFactors = left_join(fltr_passing_subset_metadata_formatted, size_factor_df, by='FASTQFILENAME')
+```
+## check that the rows and columns are in the right order
+```{r}
+all.equal(colnames(fltr_passing_subset_counts), fltr_passing_subset_metadata_formatted_with_sizeFactors$FASTQFILENAME)
+```
+## write out the dds for first processing
+```{r}
+dds = DESeqDataSetFromMatrix(countData = fltr_passing_subset_counts,
+                               colData = fltr_passing_subset_metadata_formatted_with_sizeFactors,
+                               design = augment_model_matrix)
+
+output_dir = "/mnt/htcf_scratch/chasem/rnaseq_pipeline/experiments/20210610/frankenstein_set"
+dir.create(output_dir, recursive=TRUE)
+write_rds(dds, file.path(output_dir,"input_dds_before_rle.rds"))
+
+```
+## read in the processed dds
+```{r read in processed deseq data object}
+output_dir = "/mnt/htcf_scratch/chasem/rnaseq_pipeline/experiments/20210610/frankenstein_set"
+filename = "deseq_output.rds"
+
+dds = readRDS(file.path(output_dir, filename))
+
+metadata_df = as_tibble(colData(dds)) 
+
+```
+
+### extract norm counts
+```{r, include = FALSE}
+norm_counts = counts(dds, normalized=TRUE)
+```
+
+## remove the library protocol and date effects
+```{r}
+start=2
+stop=58
+batch_indicies = seq(start,stop)
+
+colnames(model.matrix(design(dds), colData(dds)))[batch_indicies]
+```
+
+```{r, include = FALSE}
+# NOTE: in this case, since there are no "wanted" covariates, we pass the entire design matrix (library protocol + librarydate).
+# If genotype was included, then we would need to subset the design matrix to just the nuisance variable columns
+removed_librarydate_effect_log_norm_counts = removeParameterEffects(dds, batch_indicies)
+```
+
+## calculate rle by replicate group
+```{r}
+replicate_split = as_tibble(colData(dds)) %>%
+  group_by(genotype) %>%
+  group_split()
+
+replicate_names = lapply(replicate_split, function(x) as.character(unique(pull(x,genotype))))
+
+replicate_sample_list = lapply(replicate_split, function(x) as.vector(pull(x,FASTQFILENAME)))
+names(replicate_sample_list) = replicate_names
+
+norm_counts_rle_by_replicate_group = rleByReplicateGroup(replicate_sample_list, 
+                                                                norm_counts, 
+                                                                log2_transformed_flag = FALSE)
+  
+norm_counts_rle_summary = bind_rows(lapply(norm_counts_rle_by_replicate_group, rleSummary)) %>% 
+  left_join(metadata_df, by='FASTQFILENAME')
+
+removed_effect_rle_by_replicate_group = rleByReplicateGroup(replicate_sample_list, 
+                                                                   removed_librarydate_effect_log_norm_counts, 
+                                                                   log2_transformed_flag = TRUE)
+
+removed_effect_rle_summary = bind_rows(lapply(removed_effect_rle_by_replicate_group, rleSummary)) %>% 
+  left_join(metadata_df, by='FASTQFILENAME')
+```
+
+## look at the iqr dist
+```{r}
+plotRLE_bar_iqr = function(rle_summary, title){
+  ggplot(rle_summary, aes(INTERQUARTILE_RANGE)) +
+    geom_histogram() +
+    ggtitle(title)
+}
+
+hist = plotRLE_bar_iqr(removed_effect_rle_summary, "iqr")
+
+plot(hist)
+```
+
+## get high RLE plots
+```{r examine high iqr groups}
+threshold = .6125
+
+high_iqr_genotype_groups = unique(as.vector(removed_effect_rle_summary %>% 
+                                  filter(INTERQUARTILE_RANGE > threshold) %>% 
+                                  left_join(removed_effect_rle_summary, by='GENOTYPE1') %>%
+                                  group_by(GENOTYPE1) %>%
+                                  pull(GENOTYPE1)))
+
+
+```
+
+## look at high rle plots
+```{r plot high iqr groups}
+
+lapply(high_iqr_genotype_groups, function(x) rlePlotCompareEffectRemoved(norm_counts_rle_by_replicate_group[[x]],
+                                                                         removed_effect_rle_by_replicate_group[[x]], 
+                                                                         metadata_df,
+                                                                         x))
+
+subset_samples = metadata_df %>% filter(LIBRARYDATE == '2013-04-17', GENOTYPE == "CNAG_00000") %>% pull(FASTQFILENAME)
+
+rlePlotCompareEffectRemoved(norm_counts_rle_by_replicate_group$CNAG_00000[,subset_samples], 
+                            removed_effect_rle_by_replicate_group$CNAG_00000[,subset_samples],
+                            metadata_df,
+                            'cnag_00000')
+```
+
+## filter by rle
+```{r filter by iqr threshold}
+
+iqr_fltr_rle_summary = removed_effect_rle_summary %>% filter(INTERQUARTILE_RANGE<threshold)
+
+plotRLE_bar_iqr(iqr_fltr_rle_summary, "iqr")
+```
+
+## remove old size factors
+```{r remove old size factors}
+
+iqr_fltr_rle_summary = iqr_fltr_rle_summary %>% select(-sizeFactor)
+```
+
+## remove samples that fall in parameters with low replicate counts
+```{r }
+iqr_fltr_meta = fltrLowReplicateParams(iqr_fltr_rle_summary, design(dds))
+
+View(colSums(model.matrix(design(dds), iqr_fltr_meta)))
+
+```
+note: if samples are removed, it is likely that you'll need to check for linear dependencies in the model matrix again
+
+## filter counts
+```{r}
+iqr_fltr_counts = counts(dds)[,iqr_fltr_meta$FASTQFILENAME]
+```
+
+## check that the rows and columns are right
+```{r}
+all.equal(iqr_fltr_meta$FASTQFILENAME, colnames(iqr_fltr_counts))
+```
+
+## recalculate size factors
+```{r recalculate size factors}
+# note: i am going to re-do this function so it only gives back the size factors. for now, it is purpose built for the 90minuteInduction
+size_factor_dds = deseqObjectWithProtocolSpecificSizeFactors(iqr_fltr_rle_summary, fltr_passing_subset_counts)
+
+size_factor_df = tibble(FASTQFILENAME = names(sizeFactors(dds)), size_factors = sizeFactors(dds))
+
+fltr_passing_subset_metadata_formatted_with_sizeFactors = left_join(fltr_passing_subset_metadata_formatted, size_factor_df, by='FASTQFILENAME')
+```
+
+```{r}
+revised_dds = DESeqDataSetFromMatrix(countData = iqr_fltr_counts,
+                                     colData = iqr_fltr_meta,
+                                     design = # note -- this may need to be re-done after iqr filtering)
+
+# write_rds(revised_dds, "/mnt/htcf_scratch/chasem/rnaseq_pipeline/experiments/20210605/other_regulators/after_rle/other_regulators_after_rle_deseq_input.rds")
+```
+
+## SVA
+```{r}
+library(sva)
+library(BiocParallel)
+MulticoreParam(3)
+
+sva_func = function(num_sv){
+  svaseq(as.matrix(iqr_fltr_counts),
+         mod=# note -- this may need to be re-done after iqr filtering,
+         mod0=# note -- this may need to be re-done after iqr filtering,
+         n.sv=num_sv)
+}
+
+# note: the first 1-58 is intercept to the last batch index
+#sva_output_list = bplapply(1:3, sva_func) --> when trying, kept getting error about computationally singular matrix
+# when trying without specifying n.sv, the estimate was 22 SV
+
+sv_1 = sva_func(1)
+sv_2 = sva_func(2)
+sv_3 = sva_func(3)
+
+```
+
+
+```{r remake dds}
+# dds_list = list(
+#   dds_0 = DESeqDataSetFromMatrix(countData = fltr_passing_subset_counts,
+#                                colData = fltr_passing_subset_metadata_formatted,
+#                                design = augment_model_matrix),
+#   dds_1 = DESeqDataSetFromMatrix(countData = fltr_passing_subset_counts,
+#                                colData = fltr_passing_subset_metadata_formatted,
+#                                design = augment_model_matrix_sv1),
+#   dds_2 = DESeqDataSetFromMatrix(countData = fltr_passing_subset_counts,
+#                                colData = fltr_passing_subset_metadata_formatted,
+#                                design = augment_model_matrix_sv2)
+#   dds_3
+# 
+# )
+```
