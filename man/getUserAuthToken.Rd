@@ -7,8 +7,7 @@
 getUserAuthToken(url, username, password)
 }
 \arguments{
-\item{url}{check the database_info variable. It should be under database_info$organism_auth_url. Otherwise,
-the path to the authentication endpoint}
+\item{url}{check the database_info variable. for configured organisms, you can find this under database_info$organism$token_auth}
 
 \item{username}{a valid username for the database. If you don't have one, then you'll need to ask for one to be created}
 

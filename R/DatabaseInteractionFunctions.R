@@ -173,8 +173,7 @@ listTables = function(db){
 #' @import jsonlite
 #' @import dplyr
 #'
-#' @param url check the database_info variable. It should be under database_info$organism_auth_url. Otherwise,
-#'            the path to the authentication endpoint
+#' @param url check the database_info variable. for configured organisms, you can find this under database_info$organism$token_auth
 #' @param username a valid username for the database. If you don't have one, then you'll need to ask for one to be created
 #' @param password password associated with your username
 #'
