@@ -14,7 +14,7 @@ postCounts(
 )
 }
 \arguments{
-\item{database_counts_url}{eg paste(database_info$kn99_base_url, "Counts/", sep="/")}
+\item{database_counts_url}{eg database_info$kn99_urls$Counts database_info is a saved data object in this package}
 
 \item{run_number}{the run number of this counts sheet -- this is important b/c fastqFileNames aren't necessarily unique outside of their runs}
 

@@ -202,6 +202,52 @@ getUserAuthToken = function(url, username, password){
   }
 }
 
+#'
+#' post new fastq sheet to database
+#'
+#' @import httr
+#' @import jsonlite
+#' @import dplyr
+#'
+#' @param database_fastq_url eg database_info$kn99_urls$FastqFiles database_info is a saved data object in this package
+#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
+#' @param new_fastq_path path to new fastq sheet
+#'
+#' @export
+postFastqSheet = function(database_fastq_url, auth_token, new_fastq_path){
+
+  # see utils
+  fastq_df = brentlabRnaSeqTools::readInData(new_fastq_path)
+
+  # add columns frequently omitted
+  # TODO FIX THIS -- DO NOT OVERWRITE WITH BLANKS IF PRESENT
+  # fastq_df$fastqObservations = ""
+  # fastq_df$laneNumber = ""
+
+  augment_fastq_df = fastq_df %>%
+    select(-c(libraryDate, libraryPreparer)) %>%
+    mutate(fastqObservations = "") %>%
+    mutate(laneNumber = "") %>%
+    mutate(volumePooled = round(as.numeric(volumePooled), 15)) %>%
+    mutate(tapestationConc = round(as.numeric(tapestationConc), 4))
+
+  # # round to appropriate lengths
+  # fastq_df$volumePooled = round(fastq_df$volumePooled, 15)
+  # fastq_df$tapestationConc = round(fastq_df$tapestationConc, 4)
+  #
+  # # cast librarydate
+  # fastq_df$libraryDate = as.Date(fastq_df$libraryDate)
+
+  post_body = jsonlite::toJSON(augment_fastq_df, auto_unbox = TRUE)
+
+  POST(url = database_fastq_url,
+       add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+       content_type("application/json"),
+       body = post_body,
+       encode = 'json')
+}
+
+
 # TODO add dry run option
 
 #'
@@ -213,7 +259,7 @@ getUserAuthToken = function(url, username, password){
 #'
 #' @description using the package httr, post the raw count .csv, which is the compiled counts for a given run, to the database
 #'
-#' @param database_counts_url eg paste(database_info$kn99_base_url, "Counts/", sep="/")
+#' @param database_counts_url eg database_info$kn99_urls$Counts database_info is a saved data object in this package
 #' @param run_number the run number of this counts sheet -- this is important b/c fastqFileNames aren't necessarily unique outside of their runs
 #' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
 #' @param new_counts_path path to the new counts csv
@@ -288,7 +334,7 @@ postCounts = function(database_counts_url, run_number, auth_token, new_counts_pa
 #' @note there can be problems with dependencies and the rename function. this is working for now,
 #'       but see here for more info \url{https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist}
 #'
-#' @param database_qc_url eg paste(database_info$kn99_base_url, "QualityAssessment/", sep="/")
+#' @param database_qc_url eg database_info$kn99_urls$QualityAssess. database_info is a saved data object in this package
 #' @param auth_token see brentlabRnaSeqTools::getUserAuthToken
 #' @param run_number the run number of this qc sheet -- this is important b/c fastqFileNames aren't necessarily unique
 #'                   outside of their runs

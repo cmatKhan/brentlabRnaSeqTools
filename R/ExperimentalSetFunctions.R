@@ -1,6 +1,9 @@
 #' filter combined_df for environmental perturbation sample set
 #'
-#' @import dplyr
+#' @import magrittr
+#' @importFrom dplyr mutate_if mutate filter across
+#' @importFrom stringr str_remove
+#' @importFrom tidyr replace_na
 #'
 #' @param combined_df the combined tables of the database, returned directly from getMetadata() (meaning, the df hasn't been augmented after pulling from the database)
 #'
@@ -19,7 +22,13 @@ createEnvPertSet = function(combined_df){
     # cast timePoint from integer64 to integer
     mutate(timePoint = as.integer(timePoint)) %>%
     # replace empty strings in the following columns with NA
-    mutate(across(c("treatment", "otherConditions", "medium", "atmosphere", "temperature", "timePoint"), ~ifelse(.=="", NA, .) )) %>%
+    mutate(across(c("treatment",
+                    "otherConditions",
+                    "medium",
+                    "atmosphere",
+                    "temperature",
+                    "timePoint"),
+                  ~ifelse(.=="", NA, .) )) %>%
     # replace NA with defined value
     mutate(treatmentConc = replace_na(treatmentConc, 'noTreatmentConc')) %>%
     mutate(pH = replace_na(pH, 'noPH')) %>%
@@ -29,6 +38,8 @@ createEnvPertSet = function(combined_df){
     mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
     mutate(temperature = replace_na(temperature, 'noTemperature')) %>%
     mutate(timePoint = replace_na(timePoint, 'noTimepoint')) %>%
+    # remove extention from fastqFileName
+    mutate(fastqFileName = str_remove(fastqFileName, ".fastq.gz")) %>%
     # return with uppercase column names
     rename_with(toupper)
 
@@ -37,7 +48,10 @@ createEnvPertSet = function(combined_df){
 
 #' The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single KO only
 #'
-#' @import dplyr
+#' @import magrittr
+#' @importFrom dplyr mutate_if mutate filter bind_rows
+#' @importFrom stringr str_remove
+#' @importFrom tidyr replace_na
 #'
 #' @param metadata is the combined tables of the metadata database
 #' @param grant_df is the 2016 grant summary TODO: put this in DATA
@@ -50,13 +64,13 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
 
   metadata = metadata %>%
     # replace empty strings with NA
-    dplyr::mutate_if(is.character, list(~na_if(.,""))) %>%
+    mutate_if(is.character, list(~na_if(.,""))) %>%
     # replace NAs with string entry
-    dplyr::mutate(treatment = replace_na(treatment, 'noTreatment')) %>%
-    dplyr::mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions')) %>%
-    dplyr::mutate(medium = replace_na(medium, 'noMedium')) %>%
-    dplyr::mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
-    dplyr::mutate(pH = replace_na(pH, 'noPh'))
+    mutate(treatment = replace_na(treatment, 'noTreatment')) %>%
+    mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions')) %>%
+    mutate(medium = replace_na(medium, 'noMedium')) %>%
+    mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
+    mutate(pH = replace_na(pH, 'noPh'))
 
   metadata$temperature %<>% as.numeric
   metadata$timePoint %<>% as.numeric
@@ -77,13 +91,16 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
            perturbation1 =="deletion" | is.na(perturbation1))
 
   # TODO: COMBINE THE FILTER STATEMENTS INTO SINGLE FILTER
+
   # get wildtypes
-  wt_induction_set = condition_fltr_metadata %>% filter(genotype1 == "CNAG_00000", strain == 'TDY451')
+  wt_induction_set = condition_fltr_metadata %>%
+    filter(genotype1 == "CNAG_00000", strain == 'TDY451')
   # filter for genotypes in the grant summary
-  perturbed_induction_set = condition_fltr_metadata %>% filter(genotype1 %in% grant_df$GENOTYPE1 & is.na(genotype2))
+  perturbed_induction_set = condition_fltr_metadata %>%
+    filter(genotype1 %in% grant_df$GENOTYPE1 & is.na(genotype2))
+
   # put the wt and filtered genotypes together
   induction_set = bind_rows(wt_induction_set, perturbed_induction_set)
-  #####
 
   # set colnames to upper
   colnames(induction_set) = toupper(colnames(induction_set))
@@ -95,7 +112,10 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
 
 #' The current definition of the 90 minute induction dataset, according to the 2016 grant summary (loaded into environment, see head(grant_df)) -- single and double KO
 #'
-#' @import dplyr
+#' @import magrittr
+#' @importFrom dplyr mutate_if mutate filter bind_rows
+#' @importFrom stringr str_remove
+#' @importFrom tidyr replace_na
 #'
 #' @param metadata is the combined tables of the metadata database
 #' @param grant_df is the 2016 grant summary TODO: put this in DATA
@@ -104,11 +124,13 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
 #'
 #' @export
 createNinetyMinuteInductionWithDoubles = function(metadata, grant_df){
-  metadata = metadata %>% dplyr::mutate(treatment = replace_na(treatment, 'noTreatment'))
-  metadata = metadata %>% dplyr::mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions'))
-  metadata = metadata %>% dplyr::mutate(medium = replace_na(medium, 'noMedium'))
-  metadata = metadata %>% dplyr::mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere'))
-  metadata = metadata %>% dplyr::mutate(pH = replace_na(pH, 'noPh'))
+
+  metadata = metadata %>%
+    mutate(treatment = replace_na(treatment, 'noTreatment')) %>%
+    mutate(otherConditions = replace_na(otherConditions, 'noOtherConditions')) %>%
+    mutate(medium = replace_na(medium, 'noMedium')) %>%
+    mutate(atmosphere = replace_na(atmosphere, 'noAtmosphere')) %>%
+    mutate(pH = replace_na(pH, 'noPh'))
 
   metadata$temperature %<>% as.numeric
   metadata$timePoint %<>% as.numeric

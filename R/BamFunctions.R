@@ -60,11 +60,61 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
                          distinguish_strands=TRUE,
                          distinguish_nucleotides=FALSE)
 
+  sbp = strandedScanBamParam(gr, strandedness, quality_threshold)
+
+  # REMOVE THE CODE BELOW WHEN TESTED -- moved into strandedScanBamParam 6/23/21
+
   # set some information for the ScanBamParam object below. gene_strand extracts the +/- strand from the GRanges object
   # and the conditional sets the minus_strand_flag used in the ScanBamParam constructor. This determines what reads are
   # returned -- either from a given strand, or from both
   # TODO add support for forward stranded libraries
-  gene_strand = as.character(unique(data.frame(gr)$strand))
+  # gene_strand = as.character(unique(data.frame(gr)$strand))
+  #
+  # minus_strand_flag = NA
+  # if (strandedness=='reverse' & gene_strand == '+'){
+  #   minus_strand_flag = TRUE
+  # } else if(strandedness=='reverse' & gene_strand == '-'){
+  #   minus_strand_flag = FALSE
+  # }
+  #
+  # sbp = ScanBamParam(which=gr,
+  #                    mapqFilter=quality_threshold,
+  #                    flag=scanBamFlag(isMinusStrand=minus_strand_flag,
+  #                                     isSecondaryAlignment=FALSE,
+  #                                     isNotPassingQualityControls=FALSE,
+  #                                     isSupplementaryAlignment=FALSE,
+  #                                     isDuplicate=FALSE,
+  #                                     isUnmappedQuery=FALSE,
+  #                    ))
+
+  pileup(bamfile_path,
+         index = bamfile_index,
+         scanBamParam = sbp,
+         pileupParam = p_param)
+}
+
+#'
+#' create coverage scanbamparam object
+#'
+#' @import Rsamtools
+#'
+#' @description helper function to create ScanBamParam object with appropriate strandedness information
+#'
+#' @param locus_granges a granges object for a given gene (or some other feature on only one strand)
+#' @param strandedness one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured
+#' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
+#'                          chosen b/c it is the default for HTSeq
+#'
+#' @export
+strandedScanBamParam = function(locus_granges, strandedness, quality_threshold=20L){
+
+  # set some information for the ScanBamParam object below. gene_strand extracts the +/- strand from the GRanges object
+  # and the conditional sets the minus_strand_flag used in the ScanBamParam constructor. This determines what reads are
+  # returned -- either from a given strand, or from both
+  # TODO add support for forward stranded libraries
+  gene_strand = as.character(unique(data.frame(locus_granges)$strand))
+
+  # TODO add error handling if there is more than one strand found in the granges object
 
   minus_strand_flag = NA
   if (strandedness=='reverse' & gene_strand == '+'){
@@ -73,22 +123,21 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
     minus_strand_flag = FALSE
   }
 
-  sbp = ScanBamParam(which=gr,
-                     mapqFilter=quality_threshold,
-                     flag=scanBamFlag(isMinusStrand=minus_strand_flag,
-                                      isSecondaryAlignment=FALSE,
-                                      isNotPassingQualityControls=FALSE,
-                                      isSupplementaryAlignment=FALSE,
-                                      isDuplicate=FALSE,
-                                      isUnmappedQuery=FALSE,
-                     ))
-
-  pileup(bamfile_path,
-         index = bamfile_index,
-         scanBamParam = sbp,
-         pileupParam = p_param)
+  ScanBamParam(which = locus_granges,
+               mapqFilter = quality_threshold,
+               flag = scanBamFlag(isMinusStrand=minus_strand_flag,
+                                  isSecondaryAlignment=FALSE,
+                                  isNotPassingQualityControls=FALSE,
+                                  isSupplementaryAlignment=FALSE,
+                                  isDuplicate=FALSE,
+                                  isUnmappedQuery=FALSE,
+               ))
 }
 
+#'
+#' helper function to add .bai to bam path
+#' @param bamfile_path path to bamfile
+#'
 getBamIndexPath = function(bamfile_path){
   bamfile_index = paste0(bamfile_path, ".bai")
 
@@ -234,4 +283,38 @@ countReadsInRanges = function(bamfile_path, granges_of_interest, strandedness){
   return(ranges_hits)
 }
 
+#'
+#' plot coverage over locus
+#'
+#' @description ggbio plot with transcripts track and coverage track
+#'
+#' @import ggbio
+#' @import GenomicAlignments
+#'
+#' @param bamfile_path path to a bam file @seealso brentlabRnaSeqTools::createBamPath()
+#' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
+#' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
+#' @param strandedness one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured
+#' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
+#'                          chosen b/c it is the default for HTSeq
+#'
+#' @export
+plotCoverageOverLocus = function(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L){
 
+  locus_granges = featureGRanges(annote_db, gene_id, 'exon')
+
+  sbp = strandedScanBamParam(locus_granges, strandedness, quality_threshold)
+
+  bamfile_index = getBamIndexPath(bamfile_path)
+
+  parsed_alignment = readGAlignments(bamfile_path,
+                                     index = bamfile_index,
+                                     use.names = TRUE,
+                                     param=sbp)
+  # create plots
+  tx = ggbio::autoplot(annote_db, which = locus_granges)
+  cov = ggbio::autoplot(parsed_alignment, stat="coverage")
+
+  # construct layers
+  tracks(Reads = cov, Transcripts=tx, title = gene_id)
+}

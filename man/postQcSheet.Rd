@@ -7,7 +7,7 @@
 postQcSheet(database_qc_url, auth_token, run_number, new_qc_path, fastq_table)
 }
 \arguments{
-\item{database_qc_url}{eg paste(database_info$kn99_base_url, "QualityAssessment/", sep="/")}
+\item{database_qc_url}{eg database_info$kn99_urls$QualityAssess. database_info is a saved data object in this package}
 
 \item{auth_token}{see brentlabRnaSeqTools::getUserAuthToken}
 

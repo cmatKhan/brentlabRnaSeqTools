@@ -1,7 +1,8 @@
 #' create deseq object with protocol specific size factors
 #'
 #' @import DESeq2
-#' @import dplyr
+#' @import SummarizedExperiment
+#' @importFrom dplyr group_by arrange filter
 #'
 #' @param passing_qc1_meta_qual can be any metadata df, but if you're going to run deseq you may want to filter it for passing samples first
 #' @param raw_counts a dataframe of raw counts with genes in the rows and samples in the columns. sample names must be the same as the fastqFileName
@@ -12,7 +13,10 @@
 deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw_counts){
 
   colnames(passing_qc1_meta_qual) = toupper(colnames(passing_qc1_meta_qual))
-  sorted_passing_meta_qual = passing_qc1_meta_qual %>% group_by(LIBRARYDATE, LIBRARYPROTOCOL) %>% arrange(.by_group = TRUE)
+
+  sorted_passing_meta_qual = passing_qc1_meta_qual %>%
+    group_by(LIBRARYDATE, LIBRARYPROTOCOL) %>%
+    arrange(.by_group = TRUE)
 
   sorted_passing_induction_raw_counts = raw_counts[, sorted_passing_meta_qual$FASTQFILENAME]
 
@@ -39,7 +43,10 @@ deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw
 
   sizeFactors(dds) = size_factor_list
 
-  stopifnot(all.equal(names(sizeFactors(dds)), as_tibble(colData(dds))$FASTQFILENAME, colnames(counts(dds)), rownames(design(dds))) )
+  stopifnot(all.equal(names(sizeFactors(dds)),
+                      as_tibble(colData(dds))$FASTQFILENAME,
+                      colnames(counts(dds)),
+                      rownames(design(dds))) )
 
   return(dds)
 }
