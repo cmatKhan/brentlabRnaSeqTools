@@ -2,34 +2,7 @@
 
 See [Online Documentation](https://rdrr.io/github/cmatKhan/brentlabRnaSeqTools/)
 
-This is the featureCounts/subreads homepage. In particular, has a good example of how to make mean/variance graph with voom
-http://bioinf.wehi.edu.au/RNAseqCaseStudy/
-
-# TODOs
- - organize and clean up R scripts package -- similar functions to the same script file (eg rle)
- - RLE functions need to be cleaned up (for example, use the IQR function)
- - use tidymodels to create models for the QC metrics/set thresholds -- make this into a dashboard
- - remove packages from 'depends' and add to imports. import packages when needed in scripts/notebooks
- - read more about packrat, add some instructions on how to use
- - add the database interaction functions here -- see brentlabPythonUtils database interaction. Ideally, do this with the DB packages (will need to wait until the rnaseq databases are in postgresql)
- - update R and dependencies to R version 4
- - add tests
- - add CI
- - nightly builds
-
-# brentlabRnaSeqTools
-
-This is a very helpful tutorial on making an R package:  
-https://tinyheero.github.io/jekyll/update/2015/07/26/making-your-first-R-package.html  
-
-this github post helped with installing bioconductor dependencies (deseq2 in this case):  
-https://bioinformatics.stackexchange.com/a/3375  
-
-and this helped with installing from github:  
-https://cran.r-project.org/web/packages/githubinstall/vignettes/githubinstall.html
-
-Finally, here is a nice package development cheatsheet (for R):  
-https://rawgit.com/rstudio/cheatsheets/master/package-development.pdf
+all functions documentation can be accessed in RStudio with `?functionName`
 
 # Installation  
 In R, do the following:  
@@ -64,3 +37,25 @@ please do post issues to the issues tab. Please include the full error code and 
 1. fork the repo
 2. develop in a branch
 3. create a pull request for the branch
+
+
+This is the featureCounts/subreads homepage. In particular, has a good example of how to make mean/variance graph with voom
+http://bioinf.wehi.edu.au/RNAseqCaseStudy/
+
+# TODOs
+ - read more about packrat, add some instructions on how to use
+ - update R and dependencies to R version 4
+
+# brentlabRnaSeqTools
+
+This is a very helpful tutorial on making an R package:  
+https://tinyheero.github.io/jekyll/update/2015/07/26/making-your-first-R-package.html  
+
+this github post helped with installing bioconductor dependencies (deseq2 in this case):  
+https://bioinformatics.stackexchange.com/a/3375  
+
+and this helped with installing from github:  
+https://cran.r-project.org/web/packages/githubinstall/vignettes/githubinstall.html
+
+Finally, here is a nice package development cheatsheet (for R):  
+https://rawgit.com/rstudio/cheatsheets/master/package-development.pdf
