@@ -1,0 +1,134 @@
+---
+title: "experiment_sets"
+date: "`r format(Sys.Date(), '%m/%d/%Y')`"
+abstract: >
+  Explanations of provided experiment set filters, and some examples 
+output:
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: true
+    fig_width: 5
+vignette: >
+  %\VignetteIndexEntry{database_interaction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup, eval=TRUE, include=FALSE}
+library(brentlabRnaSeqTools)
+```
+
+# 2016 grant summary
+The 2016 grant summary is stored in a variable, `grant_df` which is available when you execute `library(brentlabRnaSeqTools)`
+
+# General notes
+In general, the first step to creating an experimental set is to ensure that all 'empty' values in the data are the same. This may be accomplished by setting any empty strings to NA like so (using dplyr):
+
+```{r set empty values to NA}
+
+metadata = metadata %>%
+    # replace empty strings with NA
+    mutate_if(is.character, list(~na_if(.,"")))
+
+```
+
+Once this is accomplished, you may easily replace the NAs with a specific entry. An example of this will be in the text of the `createNinetyMinuteInductionSet()` function.
+
+Filtering with dplyr is quite simple. Extensive documentation may be found here:  
+
+https://dplyr.tidyverse.org/  
+
+And you may also use the functions listed below as templates.
+
+One handy trick: use the %in% operator to filter on multiple values in a given field. For example:
+
+```{r in operator example}
+metadata %>% filter(temperature %in% c(37, 30))
+```
+
+would return any record with temperature either 37 or 30.
+
+Another trick is to use grepl to search for a pattern in a field. For example:
+
+```{r using grepl}
+combined_df %>% filter(grepl("PLAG", s2cDNAPreparer))
+```
+
+which may simiarly be achived with
+
+```{r using str_detect}
+combined_df %>% filter(str_detect(s2cDNAPreparer, "PLAG"))
+```
+
+# 90minuteInduction - 2016 grant only
+The definition of the 90 minute induction set is:
+```{r 90 min induct func text, eval=TRUE}
+createNinetyMinuteInductionSet
+```
+
+# 90minuteInduction - with doubles
+This includes all double deletions of genotypes which are included in the 2016 grant summary
+
+```{r 90 min induction doubles func text, eval=TRUE}
+createNinetyMinuteInductionWithDoubles
+```
+
+To create a set with all doubles in the database, simply filter for samples which have a double deletion. For
+example:
+
+```{r create double set}
+
+# see database_interaction for instructions on creating the combined_df
+combined_df %>% filter(perturbation1=='deletion' & perturbation2=='deletion')
+
+# at this point, you may choose to filter further. For example, you may use the same conditions as the 90minuteInduction
+# see createNinetyMinuteInductionSet for those conditions
+```
+
+# 90minuteInduction - other regulators
+This is the set of single perturbations which are not included in the 2016 grant summary
+```{r 90 min induction non 2016 grant}
+# get wildtypes from the createNinetyMinuteInduction set
+grant_induction_set = createNinetyMinuteInductionSet(combined_df, grant_df)
+
+induction_set_wt = grant_induction_set %>% filter(genotype1 == 'CNAG_00000')
+
+# note: this isn't as explicit as the createNinetyMinuteInductionSet definition. It likely should be, which would mean replacing empty strings with a definite value, and then filtering exlicitly in those columns. This prevents any strange behavior with empty strings and NA
+regulators_not_in_2016_grant = combined_df %>%
+  filter(purpose == "fullRNASeq", 
+         !genotype1 %in% grant_df$GENOTYPE1,
+         perturbation1 == 'deletion',
+         !fastqFileName %in% grant_induction_set,
+         medium %in% c("DMEM"),
+         temperature %in% c(37),
+         atmosphere %in% c("CO2"),
+         timePoint == 90,
+         !is.na(fastqFileName))
+
+other_regulators_set = bind_rows(induction_set_wt, regulators_not_in_2016_grant)
+```
+
+Extracting overexpressions is similar
+
+# Environmental Perturbation
+The definition of the Environmental Perturbation set is:
+```{r Env Pert func text, eval=TRUE}
+createEnvPertSet
+```
+
+# Quality Assessment 1 Filter
+To filter __out__ all samples which fail auto audit or manual audit (but retaining those which are manual pass regardless of auto audit status), use the following function:
+
+```{r quality assessment 1 filter}
+qual_assess_1_passing = qualityAssessmentFilter(metadata)
+
+```
+

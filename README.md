@@ -1,34 +1,40 @@
 [![Codecov test coverage](https://codecov.io/gh/cmatKhan/brentlabRnaSeqTools/branch/master/graph/badge.svg)](https://codecov.io/gh/cmatKhan/brentlabRnaSeqTools?branch=master)[![R-CMD-check](https://github.com/cmatKhan/brentlabRnaSeqTools/workflows/R-CMD-check/badge.svg)](https://github.com/cmatKhan/brentlabRnaSeqTools/actions)
 
-See [Online Documentation](https://rdrr.io/github/cmatKhan/brentlabRnaSeqTools/)
-
-all functions documentation can be accessed in RStudio with `?functionName`
-
-# Installation  
-In R, do the following:  
+# Installation and updating 
+The following will both install, and update if there are changes in the repository.
 ```
 library(devtools)
 # remove build_vignettes to save time
 install_github("cmatKhan/brentlabRnaSeqTools", build_vignettes = TRUE)
-# NOTE: you can set the argument upgrade = "ask" or upgrade = "never" to avoid upgrading other packages, though if you're in your base environment, you might as well upgrade if you have time
-
-You might also try this, if you get a namespace error:  
-install_github("cmatKhan/brentlabRnaSeqTools", force=TRUE)
-.rs.restartR()
 
 # after you get the package installed, do this:
 library(brentlabRnaSeqTools)
+
+# if you think there are changes, but install_github disagrees, try using the argument force = TRUE
 ```
+
 # uninstall
 ```
 remove.packages("brentlabRnaSeqTools")
 ```
 
-More documentation is on the way, but for now do this in the console:  
+# Documentation
+
+if you used the `build_vignettes = TRUE` argument in install_github, then you can check the available vignettes like so:
 ```
-> ?createNinetyMinuteInductionSet
+> browseVignettes("brentlabRnaSeqTools")
 ```
-Scroll to the bottom and click 'index' to get an index of avaialable functions
+Additionally, all functions and data variables are documented. If you type the following into your console:
+```
+> brentlabRnaSeqTools::
+```
+and hit tab, a list of functions and variables will appear. Select any, and place a question mark in the beginning to
+view the documentation:
+```
+> ?brentlabRnaSeqTools::getMetadata
+```
+There is also online documentation here, though the site is so full of advertisements it is hard to use:
+See [Online Documentation](https://rdrr.io/github/cmatKhan/brentlabRnaSeqTools/)
 
 # issues  
 please do post issues to the issues tab. Please include the full error code and the command/context that lead to the error
