@@ -215,12 +215,42 @@ locusLog2Cpm = function(bam_path, strandedness, locus_granges, lib_size){
   ifelse(locus_counts == 0, 0, log2(locus_counts *(lib_size/1e6)) )
 }
 
-# extractNextflowQa = function(){
-#
-#   # regex to remove samtools_idxstats
-#   # multiqc_regex = "^((?!idxstats).)*$"
-#   # regex to extract the qc to send to DB
-#   # "multiqc_(samtools|rsem|rseq).+$"
-#
-#   # join list of dfs plyr::join_all()
-# }
+#'
+#' Convenience function for edgeR's log2cpm
+#' @description see \code{\link[edgeR]{cpm}}
+#'
+#' @param numeric_count_matrix output of \code{\link{countLibrary}} cast to data frame. See example
+#' @param row_filter boolean vector length nrow(count_df) representing the rows to keep. Default is set to NA, which
+#'                   returns all rows
+#'
+#' @return a numeric matrix in log2cpm
+#'
+#' @examples
+#'
+#' library(brentlabRnaSeqTools)
+#' library(AnnotationDbi)
+#' library(tidyverse)
+#'
+#' cds_count = countLibrary(bam_path, kn99_db, 'cds', 'reverse', 8)
+#'
+#' cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")
+#'
+#' log2cpm = edgerLog2cpm(as.matrix(dplyr::select(cds_counts_df, -gene_name)))
+#' log2cpm_df = as_tibble(log2cpm) %>%
+#'   mutate(gene_name = cds_counts_df$gene_name)
+#'
+#' @seealso \code{\link[edgeR]{cpm}}
+#'
+#' @importFrom edgeR cpm
+#'
+#' @export
+edgerLog2cpm = function(numeric_count_matrix, row_filter=NA){
+
+  row_filter = ifelse(is.na(row_filter), rep(TRUE,nrow(numeric_count_matrix)), row_filter)
+
+  dgelist = DGEList(numeric_count_matrix[row_filter,])
+  # cpm returns the log2 of counts per million
+  cpm(dgelist, log=TRUE)
+
+}
+

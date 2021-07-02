@@ -35,6 +35,7 @@ Imports: rlang (>= 0.4.11),
          glue (>= 1.4.2),
          Rsamtools (>= 2.2.3),
          DESeq2 (>= 1.26.0), 
+         edgeR (>= 3.28.1),
          magrittr (>= 2.0.1), 
          RColorBrewer (>= 1.1-2), 
          ggExtra(>= 0.9)

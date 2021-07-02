@@ -13,6 +13,8 @@
 #'
 #' @return percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see getCoverageOverRegion())
 #'
+#' @seealso \code{\link{getCoverageOverRegion}}, \code{\link{strandedScanBamParam}}
+#'
 #' @export
 calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness, ...){
 
@@ -62,31 +64,6 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
 
   sbp = strandedScanBamParam(gr, strandedness, quality_threshold)
 
-  # REMOVE THE CODE BELOW WHEN TESTED -- moved into strandedScanBamParam 6/23/21
-
-  # set some information for the ScanBamParam object below. gene_strand extracts the +/- strand from the GRanges object
-  # and the conditional sets the minus_strand_flag used in the ScanBamParam constructor. This determines what reads are
-  # returned -- either from a given strand, or from both
-  # TODO add support for forward stranded libraries
-  # gene_strand = as.character(unique(data.frame(gr)$strand))
-  #
-  # minus_strand_flag = NA
-  # if (strandedness=='reverse' & gene_strand == '+'){
-  #   minus_strand_flag = TRUE
-  # } else if(strandedness=='reverse' & gene_strand == '-'){
-  #   minus_strand_flag = FALSE
-  # }
-  #
-  # sbp = ScanBamParam(which=gr,
-  #                    mapqFilter=quality_threshold,
-  #                    flag=scanBamFlag(isMinusStrand=minus_strand_flag,
-  #                                     isSecondaryAlignment=FALSE,
-  #                                     isNotPassingQualityControls=FALSE,
-  #                                     isSupplementaryAlignment=FALSE,
-  #                                     isDuplicate=FALSE,
-  #                                     isUnmappedQuery=FALSE,
-  #                    ))
-
   pileup(bamfile_path,
          index = bamfile_index,
          scanBamParam = sbp,
@@ -101,7 +78,7 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
 #' @description helper function to create ScanBamParam object with appropriate strandedness information
 #'
 #' @param locus_granges a granges object for a given gene (or some other feature on only one strand)
-#' @param strandedness one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured
+#' @param strandedness one of c("reverse", "same", "unstranded")
 #' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
 #'                          chosen b/c it is the default for HTSeq
 #'
@@ -114,14 +91,16 @@ strandedScanBamParam = function(locus_granges, strandedness, quality_threshold=2
   # TODO add support for forward stranded libraries
   gene_strand = as.character(unique(data.frame(locus_granges)$strand))
 
-  # TODO add error handling if there is more than one strand found in the granges object
+  # ensure the locus is entirely on the same strand, error out if not
+  stopifnot(length(gene_strand) == 1)
 
-  minus_strand_flag = NA
-  if (strandedness=='reverse' & gene_strand == '+'){
-    minus_strand_flag = TRUE
-  } else if(strandedness=='reverse' & gene_strand == '-'){
-    minus_strand_flag = FALSE
-  }
+  minus_strand_flag = switch (paste(strandedness, gene_strand, sep="_"),
+    "reverse_+" = TRUE,
+    "reverse_-" = FALSE,
+    "same_+" = FALSE,
+    "same_-" = TRUE,
+    NA
+  )
 
   ScanBamParam(which = locus_granges,
                mapqFilter = quality_threshold,
@@ -153,7 +132,7 @@ getBamIndexPath = function(bamfile_path){
 #'
 #' @import stringr
 #'
-#' @description a helper function to creat a bampath from some metadata information. Also checks if index exists
+#' @description a helper function to create a bampath from some metadata information. Also checks if index exists
 #'
 #' @param run_number the run_number (mind the leading zeros for old runs) of the run
 #' @param fastq_filename the fastq filename, preferrably without the extension or any leading path info. However, an effort has been made to deal with full paths and extensions
@@ -281,6 +260,112 @@ countReadsInRanges = function(bamfile_path, granges_of_interest, strandedness){
                                   param = stranded_bam_params,
                                   ignore.strand = ignore_strand_flag)
   return(ranges_hits)
+}
+
+#'
+#' Count reads in a library like HTSeq
+#'
+#' @description Used to generate library counts for QC purposes, eg perturbed log2cpm
+#'
+#' @param bam_path path to a bam file. the index must also exist
+#' @param annote_db txdb object. see \code{\link[GenomicFeatures]{makeTxDbFromGFF}}
+#' @param feature_type one of c("exon", "cds"). Determines what feature to count over
+#' @param strandedness strandedness of library determined by protocol. One of c("reverse", "same", "unstranded")
+#'                     reverse means the counted reads will be on the opposite strand of the feature, same means they
+#'                     will be on the same strand. unstranded counts reads over the feature regardless of strand
+#' @param num_threads number of threads available for parallelization. Default to 1
+#' @param single_end_reads_flag whether or not the library is single or paired. Note: this is not written to deal
+#'                              with paired end reads currently, though you can try
+#' @param mapq_filter quality filter on read alignment. Default to 20, same as HTSeq
+#'
+#' @return A RangedSummarizedExperiment. See \code{\link[GenomicAlignment]{summarizeOverlaps}}
+#'
+#' @examples
+#' library(brentlabRnaSeqTools)
+#' library(AnnotationDbi)
+#' library(tidyverse)
+#'
+#' kn99_db = loadDb("data/kn99_db.sqlite")
+#'
+#' combined_df = getMetadata(database_info$kn99_host,
+#'                           database_info$kn99_db_name,
+#'                           Sys.getenv("db_username"),
+#'                           Sys.getenv("password"))
+#'
+#' run_5102 = combined_df %>%
+#'  filter(runNumber == 5102,
+#'         experimentDesign == '90minuteInduction',
+#'         genotype1 == "CNAG_00000")
+#'
+#' wt_fastq = run_5102[[1, 'fastqFileName']]
+#'
+#' bam_path = createBamPath(5102,
+#'                          wt_fastq,
+#'                          lts_align_expr_prefix = "/mnt/htcf_scratch/chasem/rnaseq_pipeline/align_count_results")
+#'
+#' cds_count = countLibrary(bam_path, kn99_db, 'cds', 'reverse', 8)
+#'
+#' cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")
+#'
+#' @seealso \url{http://achri.blogspot.com/2016/02/how-not-to-use-deseq2-for-illumina.html},
+#'          \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html},
+#'          \code{\link[GenomicAlignment]{summarizeOverlaps}}
+#'
+#' @import BiocParallel
+#' @importFrom GenomicFeatures exonsBy
+#' @importFrom GenomicFeatures cdsBy
+#' @importFrom GenomicRanges invertStrand
+#' @importFrom Rsamtools BamFile
+#' @importFrom GenomicAlignments summarizeOverlaps
+#'
+#' @export
+countLibrary = function(bam_path, annote_db, feature_type, strandedness, num_threads = 1, single_end_reads_flag = TRUE,
+                        mapq_filter = 20L)
+{
+
+  #TODO write test for exon, cds, and strandedess. put a (subsampled, and by-hand edited) bamfile in data, write tests
+  # with that
+
+  multiparam = MulticoreParam(num_threads, progressbar = TRUE, log = TRUE)
+
+  genome_granges = switch (feature_type,
+    "exon" = exonsBy(kn99_db, by="gene"),
+    "cds" = cdsBy(kn99_db, by="gene")
+  )
+
+  bam_index = getBamIndexPath(bam_path)
+
+  bamfile = BamFile(bam_path, bam_index)
+
+  sbp = ScanBamParam(
+    mapqFilter = 20L,
+    which = genome_granges@unlistData,
+    flag  = scanBamFlag(isUnmappedQuery = FALSE,
+                        isSecondaryAlignment = FALSE,
+                        isNotPassingQualityControls = FALSE),
+  )
+
+  if (strandedness == 'reverse') {
+    summarizeOverlaps(genome_granges,
+                      bamfile,
+                      mode="Union",
+                      singleEnd=single_end_reads_flag,
+                      ignore.strand=FALSE,
+                      # invert GRange strand for reverse strand. See above
+                      preprocess.reads=GenomicRanges::invertStrand,
+                      param = sbp,
+                      BPPARAM = multiparam)
+  } else {
+    same_strand_flag = ifelse(strandedness=='same', FALSE, TRUE)
+    summarizeOverlaps(genome_granges,
+                      bamfile,
+                      mode="Union",
+                      singleEnd=single_end_reads_flag,
+                      ignore.strand=same_strand_flag,
+                      param = sbp,
+                      BPPARAM = multiparam)
+  }
+
 }
 
 #'

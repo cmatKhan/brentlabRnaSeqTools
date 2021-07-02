@@ -27,5 +27,5 @@ createBamPath(
 a verified filepath to the bam file
 }
 \description{
-a helper function to creat a bampath from some metadata information. Also checks if index exists
+a helper function to create a bampath from some metadata information. Also checks if index exists
 }

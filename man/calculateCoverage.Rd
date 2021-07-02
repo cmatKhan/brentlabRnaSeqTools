@@ -23,3 +23,6 @@ percent coverage of feature with reads above a given quality threshold and cover
 \description{
 calculate coverage over a given locus
 }
+\seealso{
+\code{\link{getCoverageOverRegion}}, \code{\link{strandedScanBamParam}}
+}

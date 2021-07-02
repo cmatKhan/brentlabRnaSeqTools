@@ -59,3 +59,20 @@ readInData = function(path){
          "xlsx" = readxl::read_excel(path),
          message("File extension not recognized. Must be one of {csv, tsv, xlsx}"))
 }
+
+#'
+#' Read in annotationbi tx_db
+#'
+#' @description convenience function to read in an AnnotationDBI tx_db object created
+#'              with \link{}GenomicFeatures makeTxDbFromGFF
+#'
+#' @param annotation_db_path to .sqlite tx_db created with AnnotationDBI
+#'
+#' @return AnnotationDBI database obj
+#'
+#' @importFrom AnnotationDbi loadDb
+#'
+#' @export
+loadAnnotationDatabase = function(annotation_db_path){
+  loadDb(annotation_db_path)
+}

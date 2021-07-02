@@ -9,7 +9,7 @@ strandedScanBamParam(locus_granges, strandedness, quality_threshold = 20L)
 \arguments{
 \item{locus_granges}{a granges object for a given gene (or some other feature on only one strand)}
 
-\item{strandedness}{one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured}
+\item{strandedness}{one of c("reverse", "same", "unstranded")}
 
 \item{quality_threshold}{quality threshold above which reads will be considered. 20l is default, which is
 chosen b/c it is the default for HTSeq}
