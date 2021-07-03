@@ -4,7 +4,14 @@
 \alias{calculateCoverage}
 \title{calculate coverage over a given locus}
 \usage{
-calculateCoverage(bamfile_path, annote_db, gene_id, strandedness, ...)
+calculateCoverage(
+  bamfile_path,
+  annote_db,
+  gene_id,
+  strandedness,
+  align_expr_prefix = Sys.getenv("ALIGN_EXPR_PREFIX"),
+  bam_suffix = "_sorted_aligned_reads_with_annote.bam"
+)
 }
 \arguments{
 \item{bamfile_path}{path to a bam file @seealso brentlabRnaSeqTools::createBamPath()}
@@ -15,7 +22,12 @@ calculateCoverage(bamfile_path, annote_db, gene_id, strandedness, ...)
 
 \item{strandedness}{one of c("unstranded", "reverse") indicating the strandedness of the library. note: forward not currently supported}
 
-\item{...}{additional arguments to getCoverageOverRegion()}
+\item{align_expr_prefix}{= path to the directory which stores the run_12345_samples run directories.
+For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
+By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX}
+
+\item{bamfile_suffix}{= whatever is appended after the fastqFileName (no extension).
+Default is "_sorted_aligned_reads_with_annote.bam"}
 }
 \value{
 percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see getCoverageOverRegion())

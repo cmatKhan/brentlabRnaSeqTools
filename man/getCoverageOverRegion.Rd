@@ -11,8 +11,8 @@ getCoverageOverRegion(
   strandedness,
   quality_threshold = 20L,
   coverage_threshold = 0,
-  lts_align_expr_prefix = Sys.getenv("LTS_ALIGN_EXPR_PREFIX"),
-  bamfile_suffix = Sys.getenv("BAM_SUFFIX")
+  align_expr_prefix = Sys.getenv("ALIGN_EXPR_PREFIX"),
+  bam_suffix = "_sorted_aligned_reads_with_annote.bam"
 )
 }
 \arguments{
@@ -29,13 +29,12 @@ chosen b/c it is the default for HTSeq}
 
 \item{coverage_threshold}{minimum read count above which to consider reads. Default is 0}
 
-\item{lts_align_expr_prefix}{= path to the directory which stores the run_12345_samples run directories.
+\item{align_expr_prefix}{= path to the directory which stores the run_12345_samples run directories.
 For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
-By default, this looks in your .Renviron for a key LTS_ALIGN_EXPR_PREFIX}
+By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX}
 
 \item{bamfile_suffix}{= whatever is appended after the fastqFileName (no extension).
-Currently, this is "_sorted_aligned_reads_with_annote.bam". By default, this looks in your
-.Renviron for a key BAM_SUFFIX}
+Currently, this is "_sorted_aligned_reads_with_annote.bam"}
 }
 \description{
 create a dataframe of coverage by nucleotide over a given locus

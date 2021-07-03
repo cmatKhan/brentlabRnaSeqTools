@@ -7,7 +7,7 @@
 createBamPath(
   run_number,
   fastq_filename,
-  lts_align_expr_prefix,
+  align_expr_prefix,
   bam_suffix = "_sorted_aligned_reads_with_annote.bam",
   test = FALSE
 )
@@ -17,9 +17,9 @@ createBamPath(
 
 \item{fastq_filename}{the fastq filename, preferrably without the extension or any leading path info. However, an effort has been made to deal with full paths and extensions}
 
-\item{lts_align_expr_prefix}{the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"}
+\item{align_expr_prefix}{the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"}
 
-\item{bam_suffix}{the common bam suffix for all bam files stored in /lts. Eg, it might be something like "_sorted_aligned_reads_with_annote.bam"}
+\item{bam_suffix}{the common bam suffix for all bam files stored in /lts. Default is "_sorted_aligned_reads_with_annote.bam"}
 
 \item{test}{boolean, default FALSE. Set to TRUE if testing this function}
 }
