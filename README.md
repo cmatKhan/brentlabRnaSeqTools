@@ -12,6 +12,22 @@ library(brentlabRnaSeqTools)
 
 # if you think there are changes, but install_github disagrees, try using the argument force = TRUE
 ```
+I have also installed this on my htcf cluster profile like so:
+```
+ml miniconda # note: this will definitely load, and most likely work as expected. But it does not come with a promise. It is a cluster module I wrote. If you have issues which you suspect to be a conda problem, I suggest that you install a version of miniconda in your home profile. It will be easier to address any conda related issues that way.
+
+conda install -n brentlabRnaSeqTools # or whatever you want to call your env name
+
+conda install r r-essentials libpq
+
+$ R
+
+> install.packages(devtools)
+# YOU HAVE TO DO THIS! do not update RSQLite (as of 20210702 there is an install error in the boost/c++ package which is a dependency. You do not need to worry about this when you're installing)
+> remotes::install_version("RSQLite", version = "2.2.5")
+> install_github("cmatKhan/brentlabRnaSeqTools")
+```
+See the bamtools vignette for examples of how to use the functions to examine bam files in an Rscript that you could run with SLURM
 
 # uninstall
 ```

@@ -9,18 +9,24 @@
 #' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
 #' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
 #' @param strandedness one of c("unstranded", "reverse") indicating the strandedness of the library. note: forward not currently supported
-#' @param ... additional arguments to getCoverageOverRegion()
+#' @param align_expr_prefix = path to the directory which stores the run_12345_samples run directories.
+#'                                For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
+#'                                By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX
+#' @param bamfile_suffix = whatever is appended after the fastqFileName (no extension).
+#'                         Currently, this is "_sorted_aligned_reads_with_annote.bam". By default, this looks in your
+#'                         .Renviron for a key BAM_SUFFIX
 #'
 #' @return percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see getCoverageOverRegion())
 #'
 #' @seealso \code{\link{getCoverageOverRegion}}, \code{\link{strandedScanBamParam}}
 #'
 #' @export
-calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness, ...){
+calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness,
+                             align_expr_prefix=Sys.getenv("ALIGN_EXPR_PREFIX"),
+                             bamfile_suffix=Sys.getenv("BAM_SUFFIX")){
 
   coverage_df = getCoverageOverRegion(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L,
-                                      coverage_threshold=0, lts_align_expr_prefix=Sys.getenv("LTS_ALIGN_EXPR_PREFIX"),
-                                      bamfile_suffix=Sys.getenv("BAM_SUFFIX"))
+                                      coverage_threshold=0, align_expr_prefix, bamfile_suffix)
   # TODO this is repeated -- how to only calculate this once in getCoverageOverRegion?
   gr = featureGRanges(annote_db, gene_id, 'cds')
 
@@ -41,16 +47,16 @@ calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness, ...
 #' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
 #'                          chosen b/c it is the default for HTSeq
 #' @param coverage_threshold minimum read count above which to consider reads. Default is 0
-#' @param lts_align_expr_prefix = path to the directory which stores the run_12345_samples run directories.
+#' @param align_expr_prefix = path to the directory which stores the run_12345_samples run directories.
 #'                                For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
-#'                                By default, this looks in your .Renviron for a key LTS_ALIGN_EXPR_PREFIX
+#'                                By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX
 #' @param bamfile_suffix = whatever is appended after the fastqFileName (no extension).
 #'                         Currently, this is "_sorted_aligned_reads_with_annote.bam". By default, this looks in your
 #'                         .Renviron for a key BAM_SUFFIX
 #' @references GenomicRanges, Rsamtools
 #' @export
 getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L,
-                                 coverage_threshold=0, lts_align_expr_prefix=Sys.getenv("LTS_ALIGN_EXPR_PREFIX"),
+                                 coverage_threshold=0, align_expr_prefix=Sys.getenv("ALIGN_EXPR_PREFIX"),
                                  bamfile_suffix=Sys.getenv("BAM_SUFFIX")){
 
   bamfile_index = getBamIndexPath(bamfile_path)
@@ -136,13 +142,13 @@ getBamIndexPath = function(bamfile_path){
 #'
 #' @param run_number the run_number (mind the leading zeros for old runs) of the run
 #' @param fastq_filename the fastq filename, preferrably without the extension or any leading path info. However, an effort has been made to deal with full paths and extensions
-#' @param lts_align_expr_prefix the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"
+#' @param align_expr_prefix the location of the run directories. Eg, if you are mounted and on your local computer, it might be something like "/mnt/htcf_lts/lts_align_expr"
 #' @param bam_suffix the common bam suffix for all bam files stored in /lts. Eg, it might be something like "_sorted_aligned_reads_with_annote.bam"
 #' @param test boolean, default FALSE. Set to TRUE if testing this function
 #'
 #' @return a verified filepath to the bam file
 #' @export
-createBamPath = function(run_number, fastq_filename, lts_align_expr_prefix, bam_suffix="_sorted_aligned_reads_with_annote.bam", test=FALSE){
+createBamPath = function(run_number, fastq_filename, align_expr_prefix, bam_suffix="_sorted_aligned_reads_with_annote.bam", test=FALSE){
 
   fastqfile_basename = str_remove(basename(fastq_filename), '.fastq.gz')
 
