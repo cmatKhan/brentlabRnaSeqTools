@@ -43,6 +43,7 @@ jobs:
         run: |
           pak::local_install_dev_deps(upgrade = TRUE)
           pak::pkg_install("covr")
+          pak::pak_install_extra()
         shell: Rscript {0}
 
       - name: Install package
