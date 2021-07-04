@@ -22,6 +22,7 @@ jobs:
       - name: Install pak and query dependencies
         run: |
           install.packages("pak", repos = "https://r-lib.github.io/p/pak/dev/")
+          pak::pak_install_extra()
           saveRDS(pak::pkg_deps("local::.", dependencies = TRUE), ".github/r-depends.rds")
         shell: Rscript {0}
 
@@ -43,7 +44,6 @@ jobs:
         run: |
           pak::local_install_dev_deps(upgrade = TRUE)
           pak::pkg_install("covr")
-          pak::pak_install_extra()
         shell: Rscript {0}
 
       - name: Install package
