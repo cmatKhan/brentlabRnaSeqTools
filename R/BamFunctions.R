@@ -131,10 +131,14 @@ strandedScanBamParam = function(locus_granges, strandedness, quality_threshold=2
 #' @return bamfile_path concat with '.bai'
 #'
 getBamIndexPath = function(bamfile_path){
+
   bamfile_index = paste0(bamfile_path, ".bai")
 
-  if (file.exists(bamfile_index)==FALSE){
-    stop("The bam file must be indexed (use samtools index to do this. After doing so, there should be a *.bai file in the same dir as the bam)")
+  error_msg = paste0("The path: ", bamfile_index, "DNE.\nThe bam file must be indexed. Use samtools index to do this.
+  After doing so, there should be a *.bai file in the same dir as the bam.")
+
+  if (!file.exists(bamfile_index)){
+    stop(error_msg)
   }
 
   return(bamfile_index)
