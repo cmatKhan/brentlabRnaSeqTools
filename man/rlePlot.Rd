@@ -2,7 +2,7 @@
 % Please edit documentation in R/RleFunctions.R
 \name{rlePlot}
 \alias{rlePlot}
-\title{plot RLE for a given column filter (eg, metadata\link{metadata$MEDIUM == 'PBS'}$FASTQFILENAME would give a list of fastqFileNames to filter)}
+\title{plot RLE for a given column filter}
 \usage{
 rlePlot(deseq_object, model_matrix, column_filter, title)
 }
@@ -19,5 +19,5 @@ rlePlot(deseq_object, model_matrix, column_filter, title)
 list with slots norm_count_rle and effect_removed_rle
 }
 \description{
-plot RLE for a given column filter (eg, metadata\link{metadata$MEDIUM == 'PBS'}$FASTQFILENAME would give a list of fastqFileNames to filter)
+plot RLE for a given column filter
 }

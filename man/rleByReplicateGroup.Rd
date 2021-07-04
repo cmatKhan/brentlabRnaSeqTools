@@ -21,6 +21,6 @@ a list of dataframes for each replicate group in replicateS_sample_list, each wi
 \description{
 calculate RLE by replicate groups
 }
-\references{
-rlePlotCompareEffectRemoved() to plot the norm counts and removedEffect 'counts' on the same plot
+\seealso{
+\code{\link{rlePlotCompareEffectRemoved}} to plot the norm counts and removedEffect 'counts' on the same plot
 }

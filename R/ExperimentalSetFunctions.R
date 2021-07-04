@@ -50,7 +50,7 @@ createEnvPertSet = function(combined_df){
 #'
 #' @import magrittr
 #' @importFrom dplyr mutate_if mutate filter bind_rows
-#' @importFrom stringr str_remove
+#' @importFrom stringr str_remove str_detect
 #' @importFrom tidyr replace_na
 #'
 #' @param metadata is the combined tables of the metadata database
@@ -114,7 +114,7 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
 #'
 #' @import magrittr
 #' @importFrom dplyr mutate_if mutate filter bind_rows
-#' @importFrom stringr str_remove
+#' @importFrom stringr str_remove str_detect
 #' @importFrom tidyr replace_na
 #'
 #' @param metadata is the combined tables of the metadata database

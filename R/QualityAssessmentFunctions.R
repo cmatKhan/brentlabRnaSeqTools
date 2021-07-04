@@ -1,8 +1,6 @@
 #'
 #' get total protein coding count from count dataframe
 #'
-#' @import dplyr
-#'
 #' @description given a count dataframe with gene_ids as rownames and quantification in a column called raw_counts, return sum of protein coding genes
 #'
 #' @param counts a dataframe with gene_ids in the rownames and (at minimum) a quantification column called raw_counts
@@ -13,6 +11,8 @@ proteinCodingCount = function(counts, protein_coding_gene_ids){
 }
 
 #' filter for manual passes (overrides auto fail) and automatic passes (unless auto failed)
+#'
+#' @importFrom dplyr filter
 #'
 #' @param metadata dataframe from the database
 #' @return a metadata dataframe with column names cast to upper
@@ -28,7 +28,7 @@ qualityAssessmentFilter = function(metadata){
 
 #' select fastqFileName, fastqFileNumber, and a pre-determined set of QC columns from a metadata df
 #'
-#' @import dplyr
+#' @importFrom dplyr select
 #'
 #' @note the column names for the metadata will be cast to upper and returned in upper
 #' @note must include Interquartile range. Think about removing this -- user could merge with IQR df after selecting these cols
@@ -47,19 +47,19 @@ selectQaColumns = function(metadata){
            FASTQFILENUMBER,
            AUTOSTATUSDECOMP,
            MANUALAUDIT,
-           INTERQUARTILE_RANGE,
-           TOTAL_DEDUPLICATED_PERCENTAGE,
-           PROTEIN_CODING_TOTAL,
+           INTERQUARTILERANGE,
+           TOTALDEDUPLICATEDPERCENTAGE,
+           PROTEINCODINGTOTAL,
            LIBRARYDATE,
-           NAT_COVERAGE,
-           NAT_LOG2CPM,
-           G418_COVERAGE,
-           G418_LOG2CPM,
-           NOT_ALIGNED_TOTAL_PERCENT,
-           NO_FEATURE_PERCENT,
-           INTERGENIC_COVERAGE,
-           LIBRARY_SIZE,
-           EFFECTIVE_UNIQUE_ALIGNMENT)
+           NATCOVERAGE,
+           NATLOG2CPM,
+           G418COVERAGE,
+           G418LOG2CPM,
+           NOTALIGNEDTOTALPERCENT,
+           NOFEATUREPERCENT,
+           INTERGENICCOVERAGE,
+           LIBRARYSIZE,
+           EFFECTIVEUNIQUE_ALIGNMENT)
 
   return(selectMetadata)
 }
@@ -67,9 +67,9 @@ selectQaColumns = function(metadata){
 #'
 #' create a sqlite database to hold the 'custom' qc data
 #'
-#' @import dplyr
-#' @import RSQLite
-#' @import glue
+#' @importFrom stringr str_remove_all
+#' @importFrom RSQLite dbConnect SQLite dbSendStatement dbClearResult dbDisconnect
+#' @importFrom glue glue_sql
 #'
 #' @param database_dirpath path to containing directory of new qc database
 #'
@@ -139,6 +139,8 @@ createQCdatabase = function(database_dirpath){
 #'
 #' calcluate genotype and marker coverages for a given metadata df
 #'
+#' @importFrom tidyr pivot_longer drop_na fill
+#' @importFrom stringr str_remove
 #' @import dplyr
 #'
 #' @description this produces a sheet that can be used to fill the 'custom' qc table for the brentlab kn99 and yeast databases
@@ -227,7 +229,7 @@ locusLog2Cpm = function(bam_path, strandedness, locus_granges, lib_size){
 #'
 #' @examples
 #'
-#' library(brentlabRnaSeqTools)
+#' \dontrun{library(brentlabRnaSeqTools)
 #' library(AnnotationDbi)
 #' library(tidyverse)
 #'
@@ -237,11 +239,11 @@ locusLog2Cpm = function(bam_path, strandedness, locus_granges, lib_size){
 #'
 #' log2cpm = edgerLog2cpm(as.matrix(dplyr::select(cds_counts_df, -gene_name)))
 #' log2cpm_df = as_tibble(log2cpm) %>%
-#'   mutate(gene_name = cds_counts_df$gene_name)
+#'   mutate(gene_name = cds_counts_df$gene_name)}
 #'
 #' @seealso \code{\link[edgeR]{cpm}}
 #'
-#' @importFrom edgeR cpm
+#' @importFrom edgeR cpm DGEList
 #'
 #' @export
 edgerLog2cpm = function(numeric_count_matrix, row_filter=NA){

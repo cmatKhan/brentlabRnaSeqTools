@@ -14,6 +14,13 @@ strandedScanBamParam(locus_granges, strandedness, quality_threshold = 20L)
 \item{quality_threshold}{quality threshold above which reads will be considered. 20l is default, which is
 chosen b/c it is the default for HTSeq}
 }
+\value{
+a ScanBamParam object with certain configured options, as well as some reasonable defaults, to filter
+a bam file for reads of interest based on the strandedness (protocol) of the library prep.
+}
 \description{
 helper function to create ScanBamParam object with appropriate strandedness information
+}
+\seealso{
+\code{\link[Rsamtools]{ScanBamParam}}
 }

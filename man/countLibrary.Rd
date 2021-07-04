@@ -30,16 +30,19 @@ will be on the same strand. unstranded counts reads over the feature regardless 
 \item{single_end_reads_flag}{whether or not the library is single or paired. Note: this is not written to deal
 with paired end reads currently, though you can try}
 
-\item{mapq_filter}{quality filter on read alignment. Default to 20, same as HTSeq}
+\item{mapq_filter}{quality filter on read alignment. Default to 20, same as HTSeq.
+see \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html}}
 }
 \value{
-A RangedSummarizedExperiment. See \code{\link[GenomicAlignment]{summarizeOverlaps}}
+A RangedSummarizedExperiment. See \code{\link[GenomicAlignments]{summarizeOverlaps}}
 }
 \description{
-Used to generate library counts for QC purposes, eg perturbed log2cpm
+This function creates a granges object from the txdb and calls \code{\link{countReadsInRanges}}.
+Uses for this function may be during QC to generate log2cpm over the CDS regions in protein
+coding transcriptome, for example
 }
 \examples{
-library(brentlabRnaSeqTools)
+\dontrun{library(brentlabRnaSeqTools)
 library(AnnotationDbi)
 library(tidyverse)
 
@@ -59,15 +62,16 @@ wt_fastq = run_5102[[1, 'fastqFileName']]
 
 bam_path = createBamPath(5102,
                          wt_fastq,
-                         lts_align_expr_prefix = "/mnt/htcf_scratch/chasem/rnaseq_pipeline/align_count_results")
+                         align_expr_prefix =
+                         "/mnt/htcf_scratch/chasem/rnaseq_pipeline/align_count_results")
 
 cds_count = countLibrary(bam_path, kn99_db, 'cds', 'reverse', 8)
 
-cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")
+cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")}
 
 }
 \seealso{
 \url{http://achri.blogspot.com/2016/02/how-not-to-use-deseq2-for-illumina.html},
 \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html},
-\code{\link[GenomicAlignment]{summarizeOverlaps}}
+\code{\link[GenomicAlignments]{summarizeOverlaps}}
 }

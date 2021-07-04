@@ -1,6 +1,7 @@
 #' create 90 minute induction set tally
 #'
-#' @import dplyr
+#' @importFrom dplyr group_by tally left_join mutate bind_rows coalesce
+#' @importFrom tidyr replace_na
 #'
 #' @param induction_meta_qual the metadata of the entire set, unfiltered
 #' @param sorted_passing_induction_meta_qual metadata (with quality columns) filtered for manual/auto status
@@ -16,13 +17,19 @@ createInductionSetTally = function(induction_meta_qual, sorted_passing_induction
   sorted_passing_induction_meta_qual$GENOTYPE = sorted_passing_induction_meta_qual$GENOTYPE1
   iqr_fltr_rle_summary$GENOTYPE = iqr_fltr_rle_summary$GENOTYPE1
 
-  induction_samples_genotype_tally = induction_meta_qual %>% group_by(GENOTYPE) %>% tally()
+  induction_samples_genotype_tally = induction_meta_qual %>%
+    group_by(GENOTYPE) %>%
+    tally()
   colnames(induction_samples_genotype_tally)[2] = "complete_set_no_fltr"
 
-  qc1_passing_tally = sorted_passing_induction_meta_qual %>% group_by(GENOTYPE) %>% tally()
+  qc1_passing_tally = sorted_passing_induction_meta_qual %>%
+    group_by(GENOTYPE) %>%
+    tally()
   colnames(qc1_passing_tally)[2] = "qc_passing"
 
-  qc1_iqr_passing_tally = iqr_fltr_rle_summary %>% group_by(GENOTYPE) %>% tally()
+  qc1_iqr_passing_tally = iqr_fltr_rle_summary %>%
+    group_by(GENOTYPE) %>%
+    tally()
   colnames(qc1_iqr_passing_tally)[2] = "qc_passing_iqr_filtered"
 
   # add genotypes from grant that have no replicates in the database at all

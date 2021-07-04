@@ -9,6 +9,9 @@ getBamIndexPath(bamfile_path)
 \arguments{
 \item{bamfile_path}{path to bamfile}
 }
+\value{
+bamfile_path concat with '.bai'
+}
 \description{
 helper function to add .bai to bam path
 }

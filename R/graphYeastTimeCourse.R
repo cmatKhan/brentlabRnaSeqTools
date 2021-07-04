@@ -1,7 +1,7 @@
 #' Plot time vs normalized counts of a given gene over n samples, faceted by librarydate and run
 #'
-#' @import dplyr
-#' @import ggplot2
+#' @importFrom dplyr left_join filter
+#' @import ggplot2 scales
 #'
 #' @description graph_output = graphTimeCourse(cst6_sample_metadata, 'CST6', 'YIL036W', cst6_norm_counts)
 #'

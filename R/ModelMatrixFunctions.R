@@ -2,6 +2,8 @@
 
 #' Create the libraryProtocol + libraryDate model matrix with the earliest date of each library protocol dropped
 #'
+#' @importFrom stats model.frame
+#'
 #' @param metadata_df the joined tables of the database (biosample to quality assess)
 #' @return a model matrix constructed as specified in the description
 #'
@@ -58,7 +60,9 @@ createNinetyMinInductionModelMatrix = function(metadata_df){
 
 #' filter low replicate parameters from metadata
 #'
-#' @import dplyr
+#' @importFrom dplyr filter pull
+#' @importFrom stringr str_remove str_trim str_split
+#' @importFrom stats model.matrix
 #'
 #' @description given a model formula, remove samples with less than a specified number of replicates from the metadata
 #'

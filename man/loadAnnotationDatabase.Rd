@@ -14,5 +14,5 @@ AnnotationDBI database obj
 }
 \description{
 convenience function to read in an AnnotationDBI tx_db object created
-with \link{}GenomicFeatures makeTxDbFromGFF
+with \code{\link[GenomicFeatures]{makeTxDbFromGFF}}
 }

@@ -13,7 +13,8 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 biocViews:
-Imports: rlang (>= 0.4.11),
+Imports: rlang (>= 0.4.10),
+         stats (>= 3.6.3),
          scales (>= 1.1.1), 
          devtools (>= 1.2.1), 
          sva(>= 3.34.0), 
@@ -27,9 +28,13 @@ Imports: rlang (>= 0.4.11),
          ggplot2 (>= 3.3.3),
          readr (>= 1.4.0),
          stringr (>= 1.4.0),
+         SummarizedExperiment (<= 1.16.1),
          ggbio (>= 1.34.0),
          GenomicRanges (>= 1.38.0),
          GenomicFeatures (>= 1.38.2),
+         AnnotationDbi (>= 1.48.0),
+         BiocParallel (<= 1.20.1),
+         GenomicAlignments (>= 1.22.1),
          RPostgres (>= 1.3.2),
          RSQLite (>= 2.2.5),
          glue (>= 1.4.2),
@@ -47,6 +52,6 @@ Suggests:
     covr
 VignetteBuilder: knitr
 Depends: 
-    R (>= 3.6.3),
+    R (>= 3.6.0),
     tibble (>= 2.1.3)
 Config/testthat/edition: 3

@@ -2,6 +2,7 @@
 #'
 #' @param counts_df gene by samples dataframe of raw counts or logged counts (see paramter logged)
 #' @param log2_transformed_flag Default FALSE set to true if log2 transformed counts are passed
+#'
 #' @return rle dataframe with genes x samples. Values are the logged differences from the gene-wise medians
 #'
 #' @export
@@ -43,7 +44,8 @@ calculateGeneWiseMedians = function(count_df){
 
 #' rleSummary calculates summary statistics of rleFullTable
 #'
-#' @import matrixStats
+#' @importFrom matrixStats iqr
+#' @importFrom stats median
 #'
 #' @param rle_table_full the output of rleFullTable
 #'
@@ -75,7 +77,7 @@ rleSummary = function(rle_table_full){
 #' @param gene_quants a gene x sample dataframe with values as some sort of gene quantification (eg normed counts, or log2(norm_counts) with some effect removed), possibly already logged (@see already_logged_flag)
 #' @param log2_transformed_flag a boolean where TRUE means the counts are already in log2 space
 #'
-#' @references rlePlotCompareEffectRemoved() to plot the norm counts and removedEffect 'counts' on the same plot
+#' @seealso \code{\link{rlePlotCompareEffectRemoved}} to plot the norm counts and removedEffect 'counts' on the same plot
 #'
 #' @return a list of dataframes for each replicate group in replicateS_sample_list, each with dimensions gene x sample. values are RLE of the gene in a given sample
 #'
@@ -90,7 +92,9 @@ rleByReplicateGroup = function(replicates_vector, gene_quants, log2_transformed_
 # TODO fix these plotting functions
 
 #'
-#' plot RLE for a given column filter (eg, metadata[metadata$MEDIUM == 'PBS']$FASTQFILENAME would give a list of fastqFileNames to filter)
+#' plot RLE for a given column filter
+#'
+#' @import DESeq2
 #'
 #' @param deseq_object a deseq object with results from the DESeq() call
 #' @param model_matrix the deseq_object model matrix
@@ -119,21 +123,24 @@ rlePlot = function(deseq_object, model_matrix, column_filter, title){
 
 #' the actual plotting function for rlePlot
 #'
-#' @import dplyr
+#' @importFrom readr read_tsv
+#' @importFrom tidyr pivot_longer
 #' @import ggplot2
 #'
 #' @param count_df counts in gene x sample
 #' @param log2_transformed_flag boolean where TRUE indicates the counts are in log2 space
 #' @param title title of the output plot
+#' @param gene_id_path path to gene_ids. Default set to read from Sys.getenv("GENE_ID_PATH")
 #'
 #' @return a ggplot
 #'
-rlePlot_helper = function(count_df, log2_transformed_flag, title){
+rlePlot_helper = function(count_df, log2_transformed_flag, title, gene_id_path = Sys.getenv("GENE_ID_PATH")){
 
 
   rle_full_table = calculateRLE(count_df, log2_transformed_flag=log2_transformed_flag)
 
-  gene_id = read_tsv("~/Desktop/rnaseq_pipeline/rnaseq_pipeline/genome_files/KN99/KN99_gene_id_list.txt", col_names = 'gene_id')[1:6967,]
+  # TODO MAKE THIS FAR MORE RESILENT -- VERY ERROR PRONE
+  gene_id = read_tsv(gene_id_path, col_names = 'gene_id')[1:6967,]
   rle_full_table$gene_id = gene_id
 
   rle_full_table %>%
@@ -153,7 +160,9 @@ rlePlot_helper = function(count_df, log2_transformed_flag, title){
 #'
 #' plots output of rleSummaryByReplicateGroup
 #'
-#' @import dplyr
+#' @importFrom tidyr pivot_longer
+#' @importFrom dplyr mutate left_join bind_rows
+#' @import ggplot2
 #'
 #' @param norm_counts_rle output of calculateRLE (maybe one of the sublists in rleByReplicateGroup())
 #' @param removed_effect_rle see norm_counts_rle, but after removing some batch effects

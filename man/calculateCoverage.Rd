@@ -5,16 +5,16 @@
 \title{calculate coverage over a given locus}
 \usage{
 calculateCoverage(
-  bamfile_path,
+  bam_path,
   annote_db,
   gene_id,
   strandedness,
   align_expr_prefix = Sys.getenv("ALIGN_EXPR_PREFIX"),
-  bam_suffix = "_sorted_aligned_reads_with_annote.bam"
+  bamfile_suffix = "_sorted_aligned_reads_with_annote.bam"
 )
 }
 \arguments{
-\item{bamfile_path}{path to a bam file @seealso brentlabRnaSeqTools::createBamPath()}
+\item{bam_path}{path to a bam file}
 
 \item{annote_db}{a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")}
 
@@ -30,7 +30,7 @@ By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX}
 Default is "_sorted_aligned_reads_with_annote.bam"}
 }
 \value{
-percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see getCoverageOverRegion())
+percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see \code{\link{getCoverageOverRegion}})
 }
 \description{
 calculate coverage over a given locus

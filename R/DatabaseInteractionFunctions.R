@@ -2,8 +2,8 @@
 #'
 #' @description Join the biosample, rnasample, s1sample, s2sample, library, fastqFiles and qualityAssessment tables (in that order, left joins) and return the result as a tibble
 #'
-#' @import RPostgres
-#' @import jsonlite
+#' @importFrom RPostgres dbDisconnect
+#' @importFrom dplyr left_join
 #'
 #' @description Use the RPostgres package to connect to a remote postgresql database, do the table joining, and return the joined metadata as a tibble. The database connection is closed
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
@@ -44,8 +44,9 @@ getMetadata = function(database_host, database_name, database_user, database_pas
 
 #' Get combined raw counts
 #'
-#' @import RPostgres
-#' @import jsonlite
+#' @importFrom RPostgres dbGetQuery dbDisconnect
+#' @importFrom dplyr bind_cols
+#' @importFrom jsonlite fromJSON
 #'
 #' @param database_host if connecting to a database hosted on AWS,
 #'                      it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
@@ -79,9 +80,8 @@ getRawCounts = function(database_host, database_name, database_user, database_pa
 #'
 #' @description saves both the individual tables, including counts, and the combined_df
 #'
-#' @import RPostgres
-#' @import readr
-#' @import dplyr
+#' @importFrom RPostgres dbDisconnect
+#' @importFrom readr write_csv
 #'
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
 #' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly
@@ -129,9 +129,10 @@ archiveDatabase = function(database_host, database_name, database_user, database
 
 }
 
+#'
 #' Connect to a remote postgresql database
 #'
-#' @import RPostgres
+#' @importFrom RPostgres dbConnect
 #'
 #' @description Use the RPostgres package to connect to a remote postgresql database
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
@@ -155,9 +156,14 @@ connectToDatabase = function(database_host, database_name, database_user, databa
 
 #'
 #' list tables in databse
+#'
+#' @importFrom RPostgres dbGetQuery
+#'
 #' @param db a connection to the database
+#'
 #' @seealso \url{https://www.postgresqltutorial.com/postgresql-show-tables/}
 #' @return all tables in database
+#'
 #' @export
 listTables = function(db){
   dbGetQuery(db, "SELECT *
@@ -169,9 +175,7 @@ listTables = function(db){
 #'
 #' get (via a http POST request) your user authentication token from the database
 #'
-#' @import httr
-#' @import jsonlite
-#' @import dplyr
+#' @importFrom httr http_status content POST
 #'
 #' @param url check the database_info variable. for configured organisms, you can find this under database_info$organism$token_auth
 #' @param username a valid username for the database. If you don't have one, then you'll need to ask for one to be created
@@ -204,9 +208,9 @@ getUserAuthToken = function(url, username, password){
 #'
 #' post new fastq sheet to database
 #'
-#' @import httr
-#' @import jsonlite
-#' @import dplyr
+#' @importFrom httr content_type add_headers POST
+#' @importFrom jsonlite toJSON
+#' @importFrom dplyr select mutate
 #'
 #' @param database_fastq_url eg database_info$kn99_urls$FastqFiles database_info is a saved data object in this package
 #' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
@@ -252,9 +256,10 @@ postFastqSheet = function(database_fastq_url, auth_token, new_fastq_path){
 #'
 #' post counts to database
 #'
-#' @import httr
-#' @import jsonlite
-#' @import dplyr
+#' @importFrom httr content_type add_headers POST
+#' @importFrom jsonlite toJSON
+#' @importFrom dplyr filter pull
+#' @importFrom stringr str_remove
 #'
 #' @description using the package httr, post the raw count .csv, which is the compiled counts for a given run, to the database
 #'
@@ -324,9 +329,10 @@ postCounts = function(database_counts_url, run_number, auth_token, new_counts_pa
 #'
 #' post new qc sheet to database
 #'
-#' @import httr
-#' @import jsonlite
-#' @import dplyr
+#' @importFrom httr content_type add_headers POST
+#' @importFrom jsonlite toJSON
+#' @importFrom dplyr rename filter left_join select
+#' @importFrom stringr str_remove
 #'
 #' @description using the package httr, post the new qc sheet to the database
 #'
@@ -411,9 +417,9 @@ postQcSheet = function(database_qc_url, auth_token, run_number, new_qc_path, fas
 #'
 #' PATCH entries in database table
 #'
-#' @import httr
-#' @import jsonlite
-#' @import dplyr
+#' @importFrom httr content_type add_headers PATCH
+#' @importFrom jsonlite toJSON
+#' @importFrom dplyr select
 #'
 #' @description using the package httr, update entries in certain fields in given rows of a table
 #'
@@ -426,7 +432,6 @@ postQcSheet = function(database_qc_url, auth_token, run_number, new_qc_path, fas
 #'
 #' @export
 patchTable = function(database_table_url, auth_token, update_df, id_col){
-
 
   # send each column to the count table of the database
   res_list = list()

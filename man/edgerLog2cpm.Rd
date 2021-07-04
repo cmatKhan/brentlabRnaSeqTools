@@ -20,7 +20,7 @@ see \code{\link[edgeR]{cpm}}
 }
 \examples{
 
-library(brentlabRnaSeqTools)
+\dontrun{library(brentlabRnaSeqTools)
 library(AnnotationDbi)
 library(tidyverse)
 
@@ -30,7 +30,7 @@ cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")
 
 log2cpm = edgerLog2cpm(as.matrix(dplyr::select(cds_counts_df, -gene_name)))
 log2cpm_df = as_tibble(log2cpm) \%>\%
-  mutate(gene_name = cds_counts_df$gene_name)
+  mutate(gene_name = cds_counts_df$gene_name)}
 
 }
 \seealso{

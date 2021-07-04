@@ -6,6 +6,9 @@
 \usage{
 testBamPath(metadata_df)
 }
+\arguments{
+\item{metadata_df}{path to metadata dataframe}
+}
 \description{
 test bam path
 }

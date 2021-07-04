@@ -1,7 +1,6 @@
 #' create deseq object with protocol specific size factors
 #'
 #' @import DESeq2
-#' @import SummarizedExperiment
 #' @importFrom dplyr group_by arrange filter
 #'
 #' @param passing_qc1_meta_qual can be any metadata df, but if you're going to run deseq you may want to filter it for passing samples first
@@ -55,7 +54,7 @@ deseqObjectWithProtocolSpecificSizeFactors = function(passing_qc1_meta_qual, raw
 #' temporary function to examine only PBS samples, eg
 #'
 #' @import DESeq2
-#' @import dplyr
+#' @importFrom dplyr filter
 #'
 #' @description gets all samples in qc_passing_metadata with size_factor_subset_param same as samples in row_filter
 #'
@@ -113,6 +112,9 @@ examineSingleGroupWithLibDateSizeFactors = function(qc1_passing_metadata, raw_co
 #' remove some effects from the counts
 #'
 #' @import DESeq2
+#' @importFrom SummarizedExperiment colData
+#' @importFrom stats coef
+#' @importFrom rlang is_formula
 #'
 #' @description subtract effect from norm counts of a single factor from coef x design. coef is in normalized log space. dds must have been created with model.matrix
 #' @note works for both formula and model.matrix designs in the dds object

@@ -13,7 +13,7 @@ plotCoverageOverLocus(
 )
 }
 \arguments{
-\item{bamfile_path}{path to a bam file @seealso brentlabRnaSeqTools::createBamPath()}
+\item{bamfile_path}{path to a bam file}
 
 \item{annote_db}{a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")}
 

@@ -4,7 +4,12 @@
 \alias{rlePlot_helper}
 \title{the actual plotting function for rlePlot}
 \usage{
-rlePlot_helper(count_df, log2_transformed_flag, title)
+rlePlot_helper(
+  count_df,
+  log2_transformed_flag,
+  title,
+  gene_id_path = Sys.getenv("GENE_ID_PATH")
+)
 }
 \arguments{
 \item{count_df}{counts in gene x sample}
@@ -12,6 +17,8 @@ rlePlot_helper(count_df, log2_transformed_flag, title)
 \item{log2_transformed_flag}{boolean where TRUE indicates the counts are in log2 space}
 
 \item{title}{title of the output plot}
+
+\item{gene_id_path}{path to gene_ids. Default set to read from Sys.getenv("GENE_ID_PATH")}
 }
 \value{
 a ggplot

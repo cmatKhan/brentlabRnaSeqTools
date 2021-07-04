@@ -21,7 +21,7 @@ test_that("readInData works", {
   output_dir = tempdir()
   df = tibble(a=c(1,2,3), b=c(1,2,3), c=c(1,2,3))
   write_csv(df, file.path(output_dir, "test.csv"))
-  write_tsv(df, file.path(output_dir, "test.tsv"))
+  readr::write_tsv(df, file.path(output_dir, "test.tsv"))
 
   expect_equal(df, readInData(file.path(output_dir, "test.csv")), ignore_attr=TRUE)
   expect_equal(df, readInData(file.path(output_dir, "test.tsv")), ignore_attr=TRUE)

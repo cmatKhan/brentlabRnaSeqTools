@@ -1,11 +1,9 @@
 #'
 #' calculate coverage over a given locus
 #'
-#' @import Rsamtools
-#' @import GenomicFeatures
-#' @import GenomicRanges
+#' @importFrom GenomicRanges width
 #'
-#' @param bamfile_path path to a bam file @seealso brentlabRnaSeqTools::createBamPath()
+#' @param bam_path path to a bam file
 #' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
 #' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
 #' @param strandedness one of c("unstranded", "reverse") indicating the strandedness of the library. note: forward not currently supported
@@ -15,16 +13,16 @@
 #' @param bamfile_suffix = whatever is appended after the fastqFileName (no extension).
 #'                         Default is "_sorted_aligned_reads_with_annote.bam"
 #'
-#' @return percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see getCoverageOverRegion())
+#' @return percent coverage of feature with reads above a given quality threshold and coverage depth threshold (see \code{\link{getCoverageOverRegion}})
 #'
 #' @seealso \code{\link{getCoverageOverRegion}}, \code{\link{strandedScanBamParam}}
 #'
 #' @export
-calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness,
+calculateCoverage = function(bam_path, annote_db, gene_id, strandedness,
                              align_expr_prefix=Sys.getenv("ALIGN_EXPR_PREFIX"),
-                             bam_suffix="_sorted_aligned_reads_with_annote.bam"){
+                             bamfile_suffix="_sorted_aligned_reads_with_annote.bam"){
 
-  coverage_df = getCoverageOverRegion(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L,
+  coverage_df = getCoverageOverRegion(bam_path, annote_db, gene_id, strandedness, quality_threshold=20L,
                                       coverage_threshold=0, align_expr_prefix, bamfile_suffix)
   # TODO this is repeated -- how to only calculate this once in getCoverageOverRegion?
   gr = featureGRanges(annote_db, gene_id, 'cds')
@@ -35,11 +33,9 @@ calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness,
 #'
 #' create a dataframe of coverage by nucleotide over a given locus
 #'
-#' @import Rsamtools
-#' @import GenomicFeatures
-#' @import GenomicRanges
+#' @importFrom Rsamtools BamFile pileup PileupParam
 #'
-#' @param bamfile_path path to a bam file @seealso brentlabRnaSeqTools::createBamPath()
+#' @param bam_path path to a bam file
 #' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
 #' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
 #' @param strandedness one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured
@@ -47,17 +43,20 @@ calculateCoverage = function(bamfile_path, annote_db, gene_id, strandedness,
 #'                          chosen b/c it is the default for HTSeq
 #' @param coverage_threshold minimum read count above which to consider reads. Default is 0
 #' @param align_expr_prefix = path to the directory which stores the run_12345_samples run directories.
-#'                                For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
-#'                                By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX
+#'                            For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
+#'                            By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX
 #' @param bamfile_suffix = whatever is appended after the fastqFileName (no extension).
-#'                         Currently, this is "_sorted_aligned_reads_with_annote.bam"
+#'                         Default is "_sorted_aligned_reads_with_annote.bam"
+#'
 #' @references GenomicRanges, Rsamtools
 #' @export
-getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L,
+getCoverageOverRegion = function(bam_path, annote_db, gene_id, strandedness, quality_threshold=20L,
                                  coverage_threshold=0, align_expr_prefix=Sys.getenv("ALIGN_EXPR_PREFIX"),
-                                 bam_suffix="_sorted_aligned_reads_with_annote.bam"){
+                                 bamfile_suffix="_sorted_aligned_reads_with_annote.bam"){
 
-  bamfile_index = getBamIndexPath(bamfile_path)
+  bam_index = getBamIndexPath(bam_path)
+
+  bamfile = BamFile(bam_path, bam_index)
 
   gr = featureGRanges(annote_db, gene_id, 'cds')
 
@@ -68,8 +67,7 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
 
   sbp = strandedScanBamParam(gr, strandedness, quality_threshold)
 
-  pileup(bamfile_path,
-         index = bamfile_index,
+  pileup(bamfile,
          scanBamParam = sbp,
          pileupParam = p_param)
 }
@@ -77,7 +75,7 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
 #'
 #' create coverage scanbamparam object
 #'
-#' @import Rsamtools
+#' @importFrom Rsamtools ScanBamParam scanBamFlag
 #'
 #' @description helper function to create ScanBamParam object with appropriate strandedness information
 #'
@@ -85,6 +83,11 @@ getCoverageOverRegion = function(bamfile_path, annote_db, gene_id, strandedness,
 #' @param strandedness one of c("reverse", "same", "unstranded")
 #' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
 #'                          chosen b/c it is the default for HTSeq
+#'
+#' @return a ScanBamParam object with certain configured options, as well as some reasonable defaults, to filter
+#'         a bam file for reads of interest based on the strandedness (protocol) of the library prep.
+#'
+#' @seealso  \code{\link[Rsamtools]{ScanBamParam}}
 #'
 #' @export
 strandedScanBamParam = function(locus_granges, strandedness, quality_threshold=20L){
@@ -96,7 +99,10 @@ strandedScanBamParam = function(locus_granges, strandedness, quality_threshold=2
   gene_strand = as.character(unique(data.frame(locus_granges)$strand))
 
   # ensure the locus is entirely on the same strand, error out if not
-  stopifnot(length(gene_strand) == 1)
+  if(!length(gene_strand) == 1){
+    message("The granges object contains features on both strands.
+            Separate the granges object into sets so that any set is on the same strand and try again")
+  }
 
   minus_strand_flag = switch (paste(strandedness, gene_strand, sep="_"),
     "reverse_+" = TRUE,
@@ -119,7 +125,10 @@ strandedScanBamParam = function(locus_granges, strandedness, quality_threshold=2
 
 #'
 #' helper function to add .bai to bam path
+#'
 #' @param bamfile_path path to bamfile
+#'
+#' @return bamfile_path concat with '.bai'
 #'
 getBamIndexPath = function(bamfile_path){
   bamfile_index = paste0(bamfile_path, ".bai")
@@ -134,7 +143,7 @@ getBamIndexPath = function(bamfile_path){
 #'
 #' create a bam path
 #'
-#' @import stringr
+#' @importFrom stringr str_remove
 #'
 #' @description a helper function to create a bampath from some metadata information. Also checks if index exists
 #'
@@ -151,7 +160,7 @@ createBamPath = function(run_number, fastq_filename, align_expr_prefix,
 
   fastqfile_basename = str_remove(basename(fastq_filename), '.fastq.gz')
 
-  bam_path = file.path(lts_align_expr_prefix, paste0("run_", as.character(run_number),"_samples/align"),
+  bam_path = file.path(align_expr_prefix, paste0("run_", as.character(run_number),"_samples/align"),
                        paste0(fastqfile_basename, bam_suffix))
 
   bam_index = getBamIndexPath(bam_path)
@@ -167,8 +176,7 @@ createBamPath = function(run_number, fastq_filename, align_expr_prefix,
 
 #' Given a GenomicFeatures annotation_db and a gene_id, extract an GRanges object of the cds
 #'
-#' @import GenomicFeatures
-#' @import GenomicRanges
+#' @importFrom GenomicFeatures cdsBy exonsBy
 #'
 #' @param annotation_db a GenomicFeatures db. You can either get this from the bioconductor resources, or create your own with a gtf
 #' @param gene_id the ID of a gene in the db. Eg, for cryptococcus CKF44_05222
@@ -231,46 +239,83 @@ determineLibraryStrandedness = function(library_protocol){
 }
 
 #'
-#' given a bam file path, GRanges object, and strandedness of library, return total counts
+#' Count reads over GRanges object
 #'
-#' @import Rsamtools
-#' @import GenomicRanges
+#' @description counts are done similarly to HTSeq
 #'
-#' @param bamfile_path path to bam file
-#' @param granges_of_interest a GRanges object
-#' @param strandedness one of c("reverse", "unstranded")
+#' @importFrom Rsamtools BamFile ScanBamParam scanBamFlag
+#' @importFrom GenomicAlignments summarizeOverlaps
+#' @importFrom GenomicRanges invertStrand
+#'
+#' @param bam_path path to bam file
+#' @param granges_of_interest a GRanges object of the features over which you wish to count
+#' @param strandedness strandedness of library determined by protocol. One of c("reverse", "same", "unstranded")
+#'                     reverse means the counted reads will be on the opposite strand of the feature, same means they
+#'                     will be on the same strand. unstranded counts reads over the feature regardless of strand
+#' @param num_threads number of threads available for parallelization. Default to 1
+#' @param single_end_reads_flag whether or not the library is single or paired. Note: this is not written to deal
+#'                              with paired end reads currently, though you can try. Default TRUE
+#' @param mapq_filter quality filter on read alignment. Default to 20, same as HTSeq.
+#'                    see \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html}
 #'
 #' @export
-countReadsInRanges = function(bamfile_path, granges_of_interest, strandedness){
+countReadsInRanges = function(bam_path, granges_of_interest, strandedness, single_end_reads_flag = TRUE,
+                              num_threads=1, mapq_filter=20L){
+
+  #TODO write test for exon, cds, and strandedess. put a (subsampled, and by-hand edited) bamfile in data, write tests
+  # with that
 
   # right now, this is only configured to handle reverse and unstranded libraries
-  stopifnot(strandedness %in% c('reverse', 'unstranded'))
+  stopifnot(strandedness %in% c('reverse', 'same', 'unstranded'))
 
-  bamfile_index = getBamIndexPath(bamfile_path)
+  multiparam = MulticoreParam(num_threads, progressbar = TRUE, log = TRUE)
 
-  # see ??scanBamParam isMinusStrand
-  ignore_strand_flag = ifelse(strandedness=='unstranded', TRUE, FALSE)
+  bam_index = getBamIndexPath(bam_path)
 
-  # for a stranded library, only count reads aligning to the appropriate strand
-  stranded_bam_params = ScanBamParam(which=granges_of_interest,
-                                     flag=scanBamFlag(
-                                       isSecondaryAlignment=FALSE,
-                                       isNotPassingQualityControls=FALSE,
-                                       isSupplementaryAlignment=FALSE,
-                                       isDuplicate=FALSE))
+  bamfile = BamFile(bam_path, bam_index)
 
-  ranges_hits = summarizeOverlaps(granges_of_interest,
-                                  bamfile,
-                                  mode="Union",
-                                  param = stranded_bam_params,
-                                  ignore.strand = ignore_strand_flag)
-  return(ranges_hits)
+  sbp = ScanBamParam(
+    mapqFilter = mapq_filter,
+    which = granges_of_interest@unlistData,
+    flag  = scanBamFlag(isUnmappedQuery = FALSE,
+                        isSecondaryAlignment = FALSE,
+                        isNotPassingQualityControls = FALSE),
+  )
+
+  if (strandedness == 'reverse') {
+    summarizeOverlaps(granges_of_interest,
+                      bamfile,
+                      mode="Union",
+                      singleEnd=single_end_reads_flag,
+                      ignore.strand=FALSE,
+                      # invert GRange strand for reverse strand. See above
+                      preprocess.reads=GenomicRanges::invertStrand,
+                      param = sbp,
+                      BPPARAM = multiparam)
+  } else {
+    same_strand_flag = ifelse(strandedness=='same', FALSE, TRUE)
+    summarizeOverlaps(granges_of_interest,
+                      bamfile,
+                      mode="Union",
+                      singleEnd=single_end_reads_flag,
+                      ignore.strand=same_strand_flag,
+                      param = sbp,
+                      BPPARAM = multiparam)
+  }
+
 }
 
 #'
 #' Count reads in a library like HTSeq
 #'
-#' @description Used to generate library counts for QC purposes, eg perturbed log2cpm
+#' @description This function creates a granges object from the txdb and calls \code{\link{countReadsInRanges}}.
+#'              Uses for this function may be during QC to generate log2cpm over the CDS regions in protein
+#'              coding transcriptome, for example
+#'
+#' @import BiocParallel
+#' @importFrom GenomicFeatures exonsBy cdsBy
+#' @importFrom GenomicRanges invertStrand
+#' @importFrom Rsamtools ScanBamParam scanBamFlag
 #'
 #' @param bam_path path to a bam file. the index must also exist
 #' @param annote_db txdb object. see \code{\link[GenomicFeatures]{makeTxDbFromGFF}}
@@ -281,12 +326,13 @@ countReadsInRanges = function(bamfile_path, granges_of_interest, strandedness){
 #' @param num_threads number of threads available for parallelization. Default to 1
 #' @param single_end_reads_flag whether or not the library is single or paired. Note: this is not written to deal
 #'                              with paired end reads currently, though you can try
-#' @param mapq_filter quality filter on read alignment. Default to 20, same as HTSeq
+#' @param mapq_filter quality filter on read alignment. Default to 20, same as HTSeq.
+#'                    see \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html}
 #'
-#' @return A RangedSummarizedExperiment. See \code{\link[GenomicAlignment]{summarizeOverlaps}}
+#' @return A RangedSummarizedExperiment. See \code{\link[GenomicAlignments]{summarizeOverlaps}}
 #'
 #' @examples
-#' library(brentlabRnaSeqTools)
+#' \dontrun{library(brentlabRnaSeqTools)
 #' library(AnnotationDbi)
 #' library(tidyverse)
 #'
@@ -306,70 +352,50 @@ countReadsInRanges = function(bamfile_path, granges_of_interest, strandedness){
 #'
 #' bam_path = createBamPath(5102,
 #'                          wt_fastq,
-#'                          lts_align_expr_prefix = "/mnt/htcf_scratch/chasem/rnaseq_pipeline/align_count_results")
+#'                          align_expr_prefix =
+#'                          "/mnt/htcf_scratch/chasem/rnaseq_pipeline/align_count_results")
 #'
 #' cds_count = countLibrary(bam_path, kn99_db, 'cds', 'reverse', 8)
 #'
-#' cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")
+#' cds_counts_df = as_tibble(assay(cds_counts), rownames = "gene_name")}
 #'
 #' @seealso \url{http://achri.blogspot.com/2016/02/how-not-to-use-deseq2-for-illumina.html},
 #'          \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html},
-#'          \code{\link[GenomicAlignment]{summarizeOverlaps}}
+#'          \code{\link[GenomicAlignments]{summarizeOverlaps}}
 #'
-#' @import BiocParallel
-#' @importFrom GenomicFeatures exonsBy
-#' @importFrom GenomicFeatures cdsBy
-#' @importFrom GenomicRanges invertStrand
-#' @importFrom Rsamtools BamFile
-#' @importFrom GenomicAlignments summarizeOverlaps
 #'
 #' @export
-countLibrary = function(bam_path, annote_db, feature_type, strandedness, num_threads = 1, single_end_reads_flag = TRUE,
-                        mapq_filter = 20L)
-{
-
-  #TODO write test for exon, cds, and strandedess. put a (subsampled, and by-hand edited) bamfile in data, write tests
-  # with that
-
-  multiparam = MulticoreParam(num_threads, progressbar = TRUE, log = TRUE)
+countLibrary = function(bam_path, annote_db, feature_type, strandedness,
+                        num_threads = 1, single_end_reads_flag = TRUE, mapq_filter = 20L){
 
   genome_granges = switch (feature_type,
-    "exon" = exonsBy(kn99_db, by="gene"),
-    "cds" = cdsBy(kn99_db, by="gene")
+    "exon" = exonsBy(annote_db, by="gene"),
+    "cds" = cdsBy(annote_db, by="gene")
   )
 
-  bam_index = getBamIndexPath(bam_path)
+  countReadsInRanges(bam_path, genome_granges, strandedness, num_threads, single_end_reads_flag, mapq_filter)
 
-  bamfile = BamFile(bam_path, bam_index)
-
-  sbp = ScanBamParam(
-    mapqFilter = 20L,
-    which = genome_granges@unlistData,
-    flag  = scanBamFlag(isUnmappedQuery = FALSE,
-                        isSecondaryAlignment = FALSE,
-                        isNotPassingQualityControls = FALSE),
-  )
-
-  if (strandedness == 'reverse') {
-    summarizeOverlaps(genome_granges,
-                      bamfile,
-                      mode="Union",
-                      singleEnd=single_end_reads_flag,
-                      ignore.strand=FALSE,
-                      # invert GRange strand for reverse strand. See above
-                      preprocess.reads=GenomicRanges::invertStrand,
-                      param = sbp,
-                      BPPARAM = multiparam)
-  } else {
-    same_strand_flag = ifelse(strandedness=='same', FALSE, TRUE)
-    summarizeOverlaps(genome_granges,
-                      bamfile,
-                      mode="Union",
-                      singleEnd=single_end_reads_flag,
-                      ignore.strand=same_strand_flag,
-                      param = sbp,
-                      BPPARAM = multiparam)
-  }
+  # moved into countReadsInRanges 20210703. Delete this if everything works
+  # if (strandedness == 'reverse') {
+  #   summarizeOverlaps(genome_granges,
+  #                     bamfile,
+  #                     mode="Union",
+  #                     singleEnd=single_end_reads_flag,
+  #                     ignore.strand=FALSE,
+  #                     # invert GRange strand for reverse strand. See above
+  #                     preprocess.reads=GenomicRanges::invertStrand,
+  #                     param = sbp,
+  #                     BPPARAM = multiparam)
+  # } else {
+  #   same_strand_flag = ifelse(strandedness=='same', FALSE, TRUE)
+  #   summarizeOverlaps(genome_granges,
+  #                     bamfile,
+  #                     mode="Union",
+  #                     singleEnd=single_end_reads_flag,
+  #                     ignore.strand=same_strand_flag,
+  #                     param = sbp,
+  #                     BPPARAM = multiparam)
+  # }
 
 }
 
@@ -378,15 +404,16 @@ countLibrary = function(bam_path, annote_db, feature_type, strandedness, num_thr
 #'
 #' @description ggbio plot with transcripts track and coverage track
 #'
-#' @import ggbio
-#' @import GenomicAlignments
+#' @importFrom ggbio autoplot tracks
+#' @importFrom GenomicAlignments readGAlignments
 #'
-#' @param bamfile_path path to a bam file @seealso brentlabRnaSeqTools::createBamPath()
+#' @param bamfile_path path to a bam file
 #' @param annote_db a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")
 #' @param gene_id a gene_id of interest -- must be in the gene names of the annote_db object
 #' @param strandedness one of c("reverse", "unstranded"). NOTE: forward only strand NOT currently configured
 #' @param quality_threshold quality threshold above which reads will be considered. 20l is default, which is
 #'                          chosen b/c it is the default for HTSeq
+#'
 #'
 #' @export
 plotCoverageOverLocus = function(bamfile_path, annote_db, gene_id, strandedness, quality_threshold=20L){

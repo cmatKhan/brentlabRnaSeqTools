@@ -2,17 +2,34 @@
 % Please edit documentation in R/BamFunctions.R
 \name{countReadsInRanges}
 \alias{countReadsInRanges}
-\title{given a bam file path, GRanges object, and strandedness of library, return total counts}
+\title{Count reads over GRanges object}
 \usage{
-countReadsInRanges(bamfile_path, granges_of_interest, strandedness)
+countReadsInRanges(
+  bam_path,
+  granges_of_interest,
+  strandedness,
+  single_end_reads_flag = TRUE,
+  num_threads = 1,
+  mapq_filter = 20L
+)
 }
 \arguments{
-\item{bamfile_path}{path to bam file}
+\item{bam_path}{path to bam file}
 
-\item{granges_of_interest}{a GRanges object}
+\item{granges_of_interest}{a GRanges object of the features over which you wish to count}
 
-\item{strandedness}{one of c("reverse", "unstranded")}
+\item{strandedness}{strandedness of library determined by protocol. One of c("reverse", "same", "unstranded")
+reverse means the counted reads will be on the opposite strand of the feature, same means they
+will be on the same strand. unstranded counts reads over the feature regardless of strand}
+
+\item{single_end_reads_flag}{whether or not the library is single or paired. Note: this is not written to deal
+with paired end reads currently, though you can try. Default TRUE}
+
+\item{num_threads}{number of threads available for parallelization. Default to 1}
+
+\item{mapq_filter}{quality filter on read alignment. Default to 20, same as HTSeq.
+see \url{https://htseq.readthedocs.io/en/release_0.11.1/count.html}}
 }
 \description{
-given a bam file path, GRanges object, and strandedness of library, return total counts
+counts are done similarly to HTSeq
 }

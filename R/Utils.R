@@ -17,7 +17,7 @@ isNumeric = function (x) {
 getRunNumberLeadingZero = function(run_number){
   run_number = as.character(run_number)
   if(!is.null(run_numbers_with_leading_zero[[run_number]])){
-    run_numbers_with_leading_zero[[run_number]]
+    brentlabRnaSeqTools::run_numbers_with_leading_zero[[run_number]]
   } else{
     run_number
   }
@@ -25,6 +25,7 @@ getRunNumberLeadingZero = function(run_number){
 
 #'
 #' test bam path
+#' @param metadata_df path to metadata dataframe
 #'
 #' @export
 testBamPath = function(metadata_df){
@@ -44,7 +45,8 @@ testBamPath = function(metadata_df){
 #'
 #' read in columnar data
 #'
-#' @import dplyr
+#' @importFrom readr read_csv read_tsv
+#' @importFrom readxl read_excel
 #'
 #' @description given a csv, tsv or excel sheet, use the right function to read in the data
 #'
@@ -64,7 +66,7 @@ readInData = function(path){
 #' Read in annotationbi tx_db
 #'
 #' @description convenience function to read in an AnnotationDBI tx_db object created
-#'              with \link{}GenomicFeatures makeTxDbFromGFF
+#'              with \code{\link[GenomicFeatures]{makeTxDbFromGFF}}
 #'
 #' @param annotation_db_path to .sqlite tx_db created with AnnotationDBI
 #'

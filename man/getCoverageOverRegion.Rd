@@ -5,18 +5,18 @@
 \title{create a dataframe of coverage by nucleotide over a given locus}
 \usage{
 getCoverageOverRegion(
-  bamfile_path,
+  bam_path,
   annote_db,
   gene_id,
   strandedness,
   quality_threshold = 20L,
   coverage_threshold = 0,
   align_expr_prefix = Sys.getenv("ALIGN_EXPR_PREFIX"),
-  bam_suffix = "_sorted_aligned_reads_with_annote.bam"
+  bamfile_suffix = "_sorted_aligned_reads_with_annote.bam"
 )
 }
 \arguments{
-\item{bamfile_path}{path to a bam file @seealso brentlabRnaSeqTools::createBamPath()}
+\item{bam_path}{path to a bam file}
 
 \item{annote_db}{a GenomicFeatures TxDb object. Maybe one made from a gtf, eg txdb = makeTxDbFromGFF("data/liftoff_h99_to_kn99.gtf", format = "gtf")}
 
@@ -34,7 +34,7 @@ For example, /lts/mblab/Crypto/rnaseq_data/lts_align_expr.
 By default, this looks in your .Renviron for a key ALIGN_EXPR_PREFIX}
 
 \item{bamfile_suffix}{= whatever is appended after the fastqFileName (no extension).
-Currently, this is "_sorted_aligned_reads_with_annote.bam"}
+Default is "_sorted_aligned_reads_with_annote.bam"}
 }
 \description{
 create a dataframe of coverage by nucleotide over a given locus

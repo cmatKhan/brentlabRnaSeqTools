@@ -1,7 +1,7 @@
 #'
 #' run SVA
 #'
-#' @import sva
+#' @importFrom sva svaseq
 #'
 #' @param raw_counts raw gene counts in the shape gene x samples where ncols matches nrow of metadata (samples == samples)
 #' @param null_model_matrix a model matrix respresenting only the batch effects. Could possibly be intercept only
