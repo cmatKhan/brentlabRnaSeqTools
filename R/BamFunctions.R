@@ -134,7 +134,8 @@ getBamIndexPath = function(bamfile_path){
 
   bamfile_index = paste0(bamfile_path, ".bai")
 
-  error_msg = paste0("The path: ", bamfile_index, "DNE.\nThe bam file must be indexed. Use samtools index to do this.
+  error_msg = paste0("The path: ", bamfile_index, " DNE.\n
+  The bam file must be indexed. Use samtools index to do this.\n
   After doing so, there should be a *.bai file in the same dir as the bam.")
 
   if (!file.exists(bamfile_index)){
