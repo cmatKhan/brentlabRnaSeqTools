@@ -435,7 +435,7 @@ plotCoverageOverLocus = function(bamfile_path, annote_db, gene_id, strandedness,
                                      param=sbp)
   # create plots
   tx = ggbio::autoplot(annote_db, which = locus_granges)
-  cov = ggbio::autoplot(parsed_alignment, stat="coverage")
+  cov = ggbio::autoplot(parsed_alignment, stat="coverage", geom="alignment")
 
   # construct layers
   tracks(Reads = cov, Transcripts=tx, title = gene_id)

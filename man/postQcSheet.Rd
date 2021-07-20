@@ -7,9 +7,9 @@
 postQcSheet(database_qc_url, auth_token, run_number, new_qc_path, fastq_table)
 }
 \arguments{
-\item{database_qc_url}{eg database_info$kn99_urls$QualityAssess. database_info is a saved data object in this package}
+\item{database_qc_url}{eg database_info$kn99_urls$QualityAssess. see \code{\link{database_info}}.}
 
-\item{auth_token}{see brentlabRnaSeqTools::getUserAuthToken}
+\item{auth_token}{\code{\link{getUserAuthToken}}}
 
 \item{run_number}{the run number of this qc sheet -- this is important b/c fastqFileNames aren't necessarily unique
 outside of their runs}

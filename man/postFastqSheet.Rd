@@ -7,9 +7,9 @@
 postFastqSheet(database_fastq_url, auth_token, new_fastq_path)
 }
 \arguments{
-\item{database_fastq_url}{eg database_info$kn99_urls$FastqFiles database_info is a saved data object in this package}
+\item{database_fastq_url}{eg database_info$kn99_urls$FastqFiles. See see \code{\link{database_info}}}
 
-\item{auth_token}{see brentlabRnaSeqTools::getUserAuthToken()}
+\item{auth_token}{see \code{\link{getUserAuthToken}}}
 
 \item{new_fastq_path}{path to new fastq sheet}
 }

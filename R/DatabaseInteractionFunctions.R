@@ -132,7 +132,8 @@ archiveDatabase = function(database_host, database_name, database_user, database
 #'
 #' Connect to a remote postgresql database
 #'
-#' @importFrom RPostgres dbConnect
+#' @importFrom RPostgres Postgres
+#' @importFrom DBI dbConnect
 #'
 #' @description Use the RPostgres package to connect to a remote postgresql database
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
@@ -212,8 +213,8 @@ getUserAuthToken = function(url, username, password){
 #' @importFrom jsonlite toJSON
 #' @importFrom dplyr select mutate
 #'
-#' @param database_fastq_url eg database_info$kn99_urls$FastqFiles database_info is a saved data object in this package
-#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
+#' @param database_fastq_url eg database_info$kn99_urls$FastqFiles. See see \code{\link{database_info}}
+#' @param auth_token see \code{\link{getUserAuthToken}}
 #' @param new_fastq_path path to new fastq sheet
 #'
 #' @export
@@ -263,9 +264,9 @@ postFastqSheet = function(database_fastq_url, auth_token, new_fastq_path){
 #'
 #' @description using the package httr, post the raw count .csv, which is the compiled counts for a given run, to the database
 #'
-#' @param database_counts_url eg database_info$kn99_urls$Counts database_info is a saved data object in this package
+#' @param database_counts_url eg database_info$kn99_urls$Counts. see \code{\link{database_info}}
 #' @param run_number the run number of this counts sheet -- this is important b/c fastqFileNames aren't necessarily unique outside of their runs
-#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken()
+#' @param auth_token see \code{\link{getUserAuthToken}}
 #' @param new_counts_path path to the new counts csv
 #' @param fastq_table a recent pull of the database fastq table
 #' @param count_file_suffix the suffix appended to the fastqFileName in the count file column headings. default is "_read_count.tsv"
@@ -339,8 +340,8 @@ postCounts = function(database_counts_url, run_number, auth_token, new_counts_pa
 #' @note there can be problems with dependencies and the rename function. this is working for now,
 #'       but see here for more info \url{https://statisticsglobe.com/r-error-cant-rename-columns-that-dont-exist}
 #'
-#' @param database_qc_url eg database_info$kn99_urls$QualityAssess. database_info is a saved data object in this package
-#' @param auth_token see brentlabRnaSeqTools::getUserAuthToken
+#' @param database_qc_url eg database_info$kn99_urls$QualityAssess. see \code{\link{database_info}}.
+#' @param auth_token \code{\link{getUserAuthToken}}
 #' @param run_number the run number of this qc sheet -- this is important b/c fastqFileNames aren't necessarily unique
 #'                   outside of their runs
 #' @param new_qc_path path to the new counts csv
@@ -452,4 +453,25 @@ patchTable = function(database_table_url, auth_token, update_df, id_col){
 
   }
   res_list
+}
+
+#'
+#' Post a table to the database
+#' @param database_table_url see \code{\link{database_info}}. Use one of the URLS in the url slot
+#' @param auth_token see \code{\link{getUserAuthToken}}
+#' @param df a dataframe read in with, for example read_csv or vroom
+#'
+#' @return POST results object
+#'
+#' @export
+postTable = function(database_table_url, auth_token, df){
+
+  post_body = jsonlite::toJSON(df, auto_unbox = TRUE)
+
+  POST(url = database_table_url,
+       add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+       content_type("application/json"),
+       body = post_body,
+       encode = 'json')
+
 }

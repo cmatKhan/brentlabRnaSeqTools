@@ -14,11 +14,11 @@ postCounts(
 )
 }
 \arguments{
-\item{database_counts_url}{eg database_info$kn99_urls$Counts database_info is a saved data object in this package}
+\item{database_counts_url}{eg database_info$kn99_urls$Counts. see \code{\link{database_info}}}
 
 \item{run_number}{the run number of this counts sheet -- this is important b/c fastqFileNames aren't necessarily unique outside of their runs}
 
-\item{auth_token}{see brentlabRnaSeqTools::getUserAuthToken()}
+\item{auth_token}{see \code{\link{getUserAuthToken}}}
 
 \item{new_counts_path}{path to the new counts csv}
 

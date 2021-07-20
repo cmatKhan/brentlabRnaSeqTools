@@ -256,3 +256,90 @@ edgerLog2cpm = function(numeric_count_matrix, row_filter=NA){
 
 }
 
+#'
+#' extract all metrics from broad rnaseqc package output
+#'
+#' @description extract, subset, reshape and plot metrics from the broad rnaseqc package
+#'              \url{https://github.com/getzlab/rnaseqc}. Function plots Expression Profiling Efficiency (epe)
+#'              vs rRNA percent and Estimated Library Complexity (elc) vs epe, both with marginal distributions.
+#'
+#' @note Estimated Library Complexity is a Picard metric and is similar to markDuplicates and totalDeduplicatedPercent
+#'       \url{https://gatk.broadinstitute.org/hc/en-us/articles/360037591931-EstimateLibraryComplexity-Picard-}
+#'
+#' @importFrom dplyr select rename mutate bind_rows
+#' @importFrom tidyr pivot_wider
+#' @importFrom readr read_tsv
+#' @import ggplot2 ggExtra
+#'
+#' @param rnaseqc_dir directory containing the rnaseqc output
+#' @param bam_suffix the suffix to remove from the bam file sample names. Default to '.markdup.sorted.bam'
+#'                   for nf-co/rnaseq_pipeline star_salmon output \url{https://nf-co.re/rnaseq}
+#'
+#' @return a list with items full_table, subset, rRna_vs_epe, rRna_vs_epe (see description)
+#'
+#' @export
+parseBroadRnaseqcOutput = function(rnaseqc_dir, bam_suffix='.markdup.sorted.bam'){
+
+  rnaseqc_summary_list = Sys.glob(file.path(rnaseqc_dir, "*metrics*"))
+
+  message('reading in rnaseqc summaries...')
+  rnaseqc_df_list = suppressMessages(lapply(rnaseqc_summary_list, read_tsv, col_names=c('metric', 'value')))
+
+  message('re-shaping and merging rnaseqc summaries...')
+  rnaseqc_df = bind_rows(lapply(rnaseqc_df_list, pivot_wider, names_from='metric', values_from='value'))
+
+  message('subsetting rnaseqc summaries...')
+  # todo: do rename in mutate, then select
+  rnaseqc_df_subset = rnaseqc_df %>%
+    select(Sample,
+           `Expression Profiling Efficiency`,
+           `Exonic Rate`,
+           `Intronic Rate`,
+           `Intergenic Rate`,
+           `Intragenic Rate`,
+           `rRNA Rate`,
+           `Estimated Library Complexity`) %>%
+    dplyr::rename(sample = Sample,
+                  expression_profiling_efficiency = `Expression Profiling Efficiency`,
+                  exonic_rate = `Exonic Rate`,
+                  intronic_rate = `Intronic Rate`,
+                  intergenic_rate = `Intergenic Rate`,
+                  intragenic_rate = `Intragenic Rate`,
+                  rRna_rate = `rRNA Rate`,
+                  estimated_library_complexity = `Estimated Library Complexity`) %>%
+    mutate(sample = str_remove(sample, bam_suffix),
+           expression_profiling_efficiency = as.numeric(expression_profiling_efficiency),
+           exonic_rate = as.numeric(exonic_rate),
+           intronic_rate = as.numeric(intronic_rate),
+           intergenic_rate = as.numeric(intergenic_rate),
+           intragenic_rate = as.numeric(intragenic_rate),
+           rRna_rate = as.numeric(rRna_rate),
+           estimated_library_complexity = as.numeric(estimated_library_complexity))
+
+  message('plotting..')
+  # epe is expression profiling efficiency
+  rRna_vs_epe = rnaseqc_df_subset %>%
+    ggplot(aes(rRna_rate, expression_profiling_efficiency)) +
+    geom_point() +
+    scale_x_continuous() +
+    scale_y_continuous()
+
+  rRna_vs_epe_with_marginals = ggMarginal(rRna_vs_epe, type="histogram")
+
+  # elc is estimated library complexity
+  elc_vs_epe = rnaseqc_df_subset %>%
+    ggplot(aes(estimated_library_complexity, expression_profiling_efficiency)) +
+    geom_point() +
+    scale_x_continuous() +
+    scale_y_continuous()
+
+  elc_vs_epe_with_marginals = ggMarginal(elc_vs_epe, type="histogram")
+
+  results = list(rnaseqc_df = rnaseqc_df,
+                 rnaseqc_df_subset = rnaseqc_df_subset,
+                 rRna_vs_epe_with_marginals = rRna_vs_epe_with_marginals,
+                 elc_vs_epe_with_marginals = elc_vs_epe_with_marginals)
+
+  return(results)
+
+}
