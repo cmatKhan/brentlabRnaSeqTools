@@ -21,6 +21,9 @@ extract, subset, reshape and plot metrics from the broad rnaseqc package
 vs rRNA percent and Estimated Library Complexity (elc) vs epe, both with marginal distributions.
 }
 \note{
+this package is buggy (doesn't always get the metrics it says it will)
+also, all metrics are included in the nf-co/pipeline
+
 Estimated Library Complexity is a Picard metric and is similar to markDuplicates and totalDeduplicatedPercent
 \url{https://gatk.broadinstitute.org/hc/en-us/articles/360037591931-EstimateLibraryComplexity-Picard-}
 }

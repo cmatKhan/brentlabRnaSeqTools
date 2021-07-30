@@ -39,6 +39,10 @@ getMetadata = function(database_host, database_name, database_user, database_pas
 
   dbDisconnect(db)
 
+  # cast integer64 to integers. see Utils is_integer64
+  metadata_df <- metadata_df %>%
+    mutate_if(is_integer64, as.integer)
+
   return(metadata_df)
 }
 

@@ -259,6 +259,10 @@ edgerLog2cpm = function(numeric_count_matrix, row_filter=NA){
 #'
 #' extract all metrics from broad rnaseqc package output
 #'
+#' @note this package is buggy (doesn't always get the metrics it says it will)
+#'       also, all metrics are included in the nf-co/pipeline
+#'
+#'
 #' @description extract, subset, reshape and plot metrics from the broad rnaseqc package
 #'              \url{https://github.com/getzlab/rnaseqc}. Function plots Expression Profiling Efficiency (epe)
 #'              vs rRNA percent and Estimated Library Complexity (elc) vs epe, both with marginal distributions.
@@ -342,4 +346,105 @@ parseBroadRnaseqcOutput = function(rnaseqc_dir, bam_suffix='.markdup.sorted.bam'
 
   return(results)
 
+}
+
+#'
+#' extract all metrics from the output of tin.py run on a batch of files
+#'
+#' @description presumably tin.py was run on a batch of samples, the output of
+#'              which is in some output dir. This function compiles all the
+#'              summary sheets and compiles them into a single dataframe
+#' @seealso \url{http://rseqc.sourceforge.net/#tin-py}
+#'
+#' @note Estimated Library Complexity is a Picard metric and is similar to markDuplicates and totalDeduplicatedPercent
+#'       \url{https://gatk.broadinstitute.org/hc/en-us/articles/360037591931-EstimateLibraryComplexity-Picard-}
+#'
+#' @importFrom dplyr select mutate select bind_rows
+#' @importFrom stringr str_remove
+#' @importFrom readr read_tsv
+#' @import ggplot2 ggExtra
+#'
+#' @param rnaseqc_dir directory containing the rnaseqc output
+#' @param bam_suffix the suffix to remove from the bam file sample names. Default to '.markdup.sorted.bam'
+#'                   for nf-co/rnaseq_pipeline star_salmon output \url{https://nf-co.re/rnaseq}
+#'
+#' @return a list with items full_table, subset, rRna_vs_epe, rRna_vs_epe (see description)
+#'
+#' @export
+compileTinOutput = function(tin_output_dir, bam_suffix='.markdup.sorted.bam'){
+
+  message('reading in tin.py summaries...')
+  tin_summary_list = Sys.glob(file.path(tin_output_dir, "*summary*"))
+  tin_df_list = suppressMessages(lapply(tin_summary_list, read_tsv))
+
+  message('merging tin.py summaries...')
+  tin_df = bind_rows(tin_df_list)
+  # todo: do rename in mutate, then select
+  tin_df %>%
+    mutate(Sample = str_remove(Bam_file, bam_suffix)) %>%
+    select(-Bam_file)
+}
+
+#' decompose sums of powers of two to a list of the summed powers
+#'
+#' @description eg 18 = 2 + 16 decomposes to 1, 4
+#'
+#' @references yiming kang
+#' \url{https://github.com/yiming-kang/rnaseq_pipe/blob/master/tools/utils.py}
+#'
+#' @param status an integer that represents the sum of powers of 2
+#' @return a string of powers of 2 representing the bit, eg 1,4
+#'
+#' @export
+decomposeStatus2Bit = function(status){
+
+  #TODO can use negative numbers for "passing reasons"!!
+
+  status_decomp = list()
+
+  if(is.na(status)){
+    status_decomp = "status_NA"
+  } else if(status == 0){
+    status_decomp = "passing_sample"
+  } else if(status > 0){
+    for(i in seq(floor(log2(status)),0)){
+      if ((status -2**i) >= 0){
+        status_decomp = append(status_decomp, i)
+        status = status - 2**i
+      }
+    }
+    status_decomp = paste(sort(unlist(status_decomp)), collapse=",")
+  }
+  status_decomp
+}
+
+#' calculate lower/upper fence as a default threshold on qc metrics
+#'
+#' @description calculate lower/upper inner and outer fences, and number of NAs
+#'              in metric vector. inner fence defined as Q1/Q3 -/+ 1.5*IQR,
+#'              outer fence is the same but 3*IQR
+#'
+#' @param metric_vector numeric vector on which to calculate lower/upper fence
+#' @return a list with the following slots: message, which stores a message
+#'         regarding the NA count, lower_inner, lower_outer, and upper_inner,
+#'         upper_outer which both store the fence values
+#'
+#' @export
+outlierFence = function(metric_vector){
+  # TODO test this
+  metric_quantiles = quantile(metric_vector, c(.25, .75))
+
+  metric_iqr = IQR(metric_vector, na.rm = TRUE)
+  metric_iqr_inner_fence = 1.5*metric_iqr
+  metric_iqr_outer_fence = 3*metric_iqr
+
+  na_msg = paste0("Note: there are ",as.character(sum(is.na(metric_vector))),
+                  " NAs in the argument vector.")
+
+  list(message     = na_msg,
+       lower_inner = metric_quantiles[[1]] - metric_iqr_inner_fence,
+       lower_outer = metric_quantiles[[1]] - metric_iqr_outer_fence,
+       upper_inner = metric_quantiles[[2]] + metric_iqr_inner_fence,
+       upper_outer = metric_quantiles[[2]] + metric_iqr_outer_fence
+  )
 }

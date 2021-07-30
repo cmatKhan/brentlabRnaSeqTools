@@ -16,7 +16,7 @@ createNfCorePipelineSampleSheet(
 and the columns used to create the sample name (see param sample_columns)}
 
 \item{sample_columns}{a character vector of columns to concat into a sample identifier.
-eg c("genotype1", "treatment", "timePoint", "floodmedia", "inductionDelay")}
+eg c("genotype1", "fastqFileNumber")}
 
 \item{sequence_dir_prefix}{path to directory where the sequence run directories are stored.
 eg /mnt/htcf_lts/lts_sequence}

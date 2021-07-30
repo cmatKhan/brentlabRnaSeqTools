@@ -78,3 +78,20 @@ readInData = function(path){
 loadAnnotationDatabase = function(annotation_db_path){
   loadDb(annotation_db_path)
 }
+
+#'
+#' Test if value is datatype integer64
+#'
+#' @description integer64 can cause some problems in filtering functions, eg
+#'              if timePoint is an integer64 datatype column, then
+#'              timePoint %in% c(0L, 1440L) and
+#'              timePoint == 0 | timePoint == 1440 return different subsets
+#'
+#' @references \url{https://community.rstudio.com/t/how-to-handle-the-integer64-type/50024}
+#'
+#' @return boolean with truth value determined by whether input is integer64
+#'
+#' @export
+is_integer64 <- function(x){
+  class(x)=="integer64"
+}

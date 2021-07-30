@@ -17,3 +17,11 @@ test_that("protein coding counted", {
 #
 #   #unlink(output_dir, recursive = TRUE, force = TRUE)
 # })
+
+test_that("decomposeStatus2Bit test", {
+
+    status = 6
+    decomp = "1,2"
+    function_decomp = decomposeStatus2Bit(status)
+    expect_equal(decomp, function_decomp)
+})
