@@ -364,7 +364,7 @@ parseBroadRnaseqcOutput = function(rnaseqc_dir, bam_suffix='.markdup.sorted.bam'
 #' @importFrom readr read_tsv
 #' @import ggplot2 ggExtra
 #'
-#' @param rnaseqc_dir directory containing the rnaseqc output
+#' @param tin_output_dir directory containing the rnaseqc output
 #' @param bam_suffix the suffix to remove from the bam file sample names. Default to '.markdup.sorted.bam'
 #'                   for nf-co/rnaseq_pipeline star_salmon output \url{https://nf-co.re/rnaseq}
 #'
@@ -423,6 +423,8 @@ decomposeStatus2Bit = function(status){
 #' @description calculate lower/upper inner and outer fences, and number of NAs
 #'              in metric vector. inner fence defined as Q1/Q3 -/+ 1.5*IQR,
 #'              outer fence is the same but 3*IQR
+#'
+#' @importFrom stats IQR quantile
 #'
 #' @param metric_vector numeric vector on which to calculate lower/upper fence
 #' @return a list with the following slots: message, which stores a message

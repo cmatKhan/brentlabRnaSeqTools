@@ -6,6 +6,9 @@
 \usage{
 is_integer64(x)
 }
+\arguments{
+\item{x}{a numeric value}
+}
 \value{
 boolean with truth value determined by whether input is integer64
 }

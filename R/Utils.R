@@ -89,6 +89,8 @@ loadAnnotationDatabase = function(annotation_db_path){
 #'
 #' @references \url{https://community.rstudio.com/t/how-to-handle-the-integer64-type/50024}
 #'
+#' @param x a numeric value
+#'
 #' @return boolean with truth value determined by whether input is integer64
 #'
 #' @export

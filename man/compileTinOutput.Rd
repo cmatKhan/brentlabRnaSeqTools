@@ -7,10 +7,10 @@
 compileTinOutput(tin_output_dir, bam_suffix = ".markdup.sorted.bam")
 }
 \arguments{
+\item{tin_output_dir}{directory containing the rnaseqc output}
+
 \item{bam_suffix}{the suffix to remove from the bam file sample names. Default to '.markdup.sorted.bam'
 for nf-co/rnaseq_pipeline star_salmon output \url{https://nf-co.re/rnaseq}}
-
-\item{rnaseqc_dir}{directory containing the rnaseqc output}
 }
 \value{
 a list with items full_table, subset, rRna_vs_epe, rRna_vs_epe (see description)

@@ -136,8 +136,7 @@ archiveDatabase = function(database_host, database_name, database_user, database
 #'
 #' Connect to a remote postgresql database
 #'
-#' @importFrom RPostgres Postgres
-#' @importFrom DBI dbConnect
+#' @importFrom RPostgres Postgres dbConnect
 #'
 #' @description Use the RPostgres package to connect to a remote postgresql database
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
@@ -461,6 +460,10 @@ patchTable = function(database_table_url, auth_token, update_df, id_col){
 
 #'
 #' Post a table to the database
+#'
+#' @importFrom httr content_type add_headers POST
+#' @importFrom jsonlite toJSON
+#'
 #' @param database_table_url see \code{\link{database_info}}. Use one of the URLS in the url slot
 #' @param auth_token see \code{\link{getUserAuthToken}}
 #' @param df a dataframe read in with, for example read_csv or vroom

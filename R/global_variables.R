@@ -42,7 +42,10 @@ old_qc_colnames = c("LIBRARY_SIZE","EFFECTIVE_LIBRARY_SIZE","EFFECTIVE_UNIQUE_AL
 # TODO all global variables should be capitalized from now on -- uncapitalized variables should be made capital
 misc = c("GENOTYPE", "STRAIN_STATUS", "RLE", "TOTALDEDUPLICATEDPERCENTAGE", "qc_passing_iqr_filtered",
          "qc_passing", "complete_set_no_fltr", "replicate_tally", "model_params",
-         "norm_count", ".x", "quant_type", ".")
+         "norm_count", ".x", "quant_type", ".", "Bam_file", "fastq_1", "fastq_2", "strandedness", "quantile",
+         "IQR", "Sample", "Expression\ Profiling\ Efficiency", "Exonic\ Rate", "Intronic\ Rate", "Intergenic\ Rate",
+        "Intragenic\ Rate", "rRNA\ Rate", "Estimated\ Library\ Complexity", "expression_profiling_efficiency",
+        "exonic_rate", "intronic_rate", "intergenic_rate", "intragenic_rate", "rRna_rate", "estimated_library_complexity")
 
 package_data_variables = c("test_metadata", "run_numbers_with_leading_zero")
 
