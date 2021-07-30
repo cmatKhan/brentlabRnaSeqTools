@@ -1,0 +1,201 @@
+---
+title: "running_the_nextflow_pipeline"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{running_the_nextflow_pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# Create an environment with nextflow
+
+```{bash}
+cd /scratch/mblab/$USER
+
+# launch an interactive session
+srun --mem=20000 --cpus-per-task=1 -J interactive -p interactive --pty /bin/bash -l
+
+# note: there are no promises that this package works. My suggestion is that you use your own installation of conda
+ml miniconda
+
+mkdir conda_envs
+
+# this will create the environment directory in your scratch space (yes, it may be deleted. you'd have to make a new one when that happens), and installs nextflow into it
+create create -p conda_envs/nextflow nextflow
+
+```
+
+# Launch the environment and test nextflow
+
+_Not_ with `conda activate nextflow`. Because you created this outside of your `$CONDA_HOME`, you have to provide the path like so:
+
+```{bash}
+
+# do this if you are not already there
+cd /scratch/mblab/$USER
+srun --mem=20000 --cpus-per-task=1 -J interactive -p interactive --pty /bin/bash -l
+ml miniconda
+
+
+# activate the environment
+source activate ./conda_envs/nextflow
+
+nextflow run hello # note: might take a few minutes
+```
+
+# Download the configuration files
+
+You could put this in `$HOME`, if you want, to avoid having it garbage collected
+
+```{bash}
+git clone https://github.com/cmatKhan/configs.git
+```
+
+# Run the nextflow pipeline
+
+This is a bit of a misnomer -- nextflow is simply the language. The pipeline is from [nf-co.re](https://nf-co.re/), which is a highly curated repository for nextflow pipelines. There is only one pipeline for any given task, meaning there will not be 10 different rnaseq_pipelines. Rather, all development for rnaseq is happening in one spot.
+
+There are two options -- you can read the [parameter docs](https://nf-co.re/rnaseq/3.3/parameters) to figure out how to input your data, or you can click the "launch version #.#" button in the header of page. There is a form you can fill out which will create the parameters.json document, and also tell you what the command will look like.
+
+Here is an example of what submitting to the pipeline looks like
+
+## Sample sheet
+
+```{raw}
+
+sample fastq_1                                                               fastq_2 strandedness
+269    /lts/mblab/Crypto/rnaseq_data/lts_sequence/run_4178_samples/Brent_J... ""      reverse     
+270    /lts/mblab/Crypto/rnaseq_data/lts_sequence/run_4040_samples/Brent_s... ""      reverse     
+278    /lts/mblab/Crypto/rnaseq_data/lts_sequence/run_4040_samples/Brent_s... ""      reverse     
+306    /lts/mblab/Crypto/rnaseq_data/lts_sequence/run_1658_samples/1658_Br... ""      reverse     
+307    /lts/mblab/Crypto/rnaseq_data/lts_sequence/run_1658_samples/1658_Br... ""      reverse     
+308    /lts/mblab/Crypto/rnaseq_data/lts_sequence/run_1658_samples/1658_Br... ""      reverse     
+
+```
+
+## Move the fastq files to scratch
+
+This is a frustrating step, and one that I haven't re-written a function for yet in the brentlabRnaSeqTools package. Right now, this is how I do it. If you are not a computational person in the lab, please just ask one of us to move the files for you
+
+```{bash}
+
+awk -F"," '{print $2}' sample_sheet.csv > fastq_lookup.txt
+
+mkdir scratch_fastqs
+
+cat fastq_lookup.txt | while read line; do rsync -aHvR $line ../scratch_sequence/fastq_set/; done
+
+# and then I move the run directories back up to the level that I want them -- please just ask if this doesn't make sense. Eventually there will be a function in the brentlabRnaSeqTools. If you have a better bash method, please tell me.
+
+```
+
+
+## params
+
+NOTE! This is not necessarily a "standard" parameter file -- in particular, the feature_group_type is "
+and we are skipping the biotype_qc. This is necessary for crypto since there is no biotype information
+in the GTF. This should not be the case, however, certainly will not be true if you are processing human and mouse
+data.
+
+```{raw}
+
+{
+    "input": "sample_summary.csv",
+    "outdir": ".\/work",
+    "gtf": "crypto.gtf.gz",
+    "gtf_extra_attributes": "ID",
+    "featurecounts_group_type": "",
+    "rseqc_modules": "bam_stat,inner_distance,infer_experiment,junction_annotation,junction_saturation,read_distribution,read_duplication,tin",
+    "skip_bigwig": true,
+    "skip_biotype_qc": true
+}
+
+```
+
+## nextflow command
+
+```{raw}
+#!/bin/bash
+
+#SBATCH --time=15:00:00  # right now, 15 hours. change depending on time expectation to run
+#SBATCH --mem-per-cpu=5G
+#SBATCH -J your_run_name
+#SBATCH -o ./your_output_name.out
+
+ml miniconda
+ml singularity
+
+source activate /path/to/your/conda_env/nextflow
+
+work_folder_name=work_today
+
+config_path=/scratch/mblab/$USER/configs/conf/wustl_htcf.config
+
+param_file=/scratch/mblab/$USER/param.json
+
+# yes -- keep this here
+mkdir -p tmp
+
+# note! -r 3.3 is the 'revision' or version of the nf-co/rnaseq pipeline you wish to use.
+# You should use the most up to date version, unless you are holding the version constant
+# for consistency across a set
+
+nextflow run nf-core/rnaseq -r 3.3 \
+                            -work-dir ${PWD}/${work_folder_name} \
+                            -c ${config_path} \
+                            -params-file ${param_file}
+
+```
+
+# the Resume function
+
+Oh no! your pipeline errored half way through. Do the following:
+
+1. read the error message carefully and see if you can fix the issue on your own. For example, are all your input paths correct?
+2. save the error message and send it to someone else.
+3. get on the nf-co/rnaseq_pipeline slack channel (you'll find the link on their site). They are _very_ helpful, and part of the reason 
+we switched to this pipeline is to get access to a wider community of bioinformatians  
+
+When you think you ahve resolved the issue, just add the `-resume` flag to your command like so and resubmit:
+
+```{raw}
+#!/bin/bash
+
+#SBATCH --time=15:00:00  # right now, 15 hours. change depending on time expectation to run
+#SBATCH --mem-per-cpu=5G
+#SBATCH -J your_run_name
+#SBATCH -o ./your_output_name.out
+
+ml miniconda
+ml singularity
+
+source activate /path/to/your/conda_env/nextflow
+
+work_folder_name=work_today
+
+config_path=/scratch/mblab/$USER/configs/conf/wustl_htcf.config
+
+param_file=/scratch/mblab/$USER/param.json
+
+# yes -- keep this here
+mkdir -p tmp
+
+# note! -r 3.3 is the 'revision' or version of the nf-co/rnaseq pipeline you wish to use.
+# You should use the most up to date version, unless you are holding the version constant
+# for consistency across a set
+
+nextflow run nf-core/rnaseq -r 3.3 \
+                            -work-dir ${PWD}/${work_folder_name} \
+                            -c ${config_path} \
+                            -params-file ${param_file} \
+                            -resume # see how easy that is!
+```
+

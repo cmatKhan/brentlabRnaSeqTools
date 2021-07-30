@@ -1,0 +1,90 @@
+---
+title: "create_nextflow_samplesheet"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{create_nextflow_samplesheet}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(brentlabRnaSeqTools)
+library(tidyverse) # only need dplyr and readr
+```
+
+# Get the Metadata
+
+See the create_set vignette/article for comments on the DB_USERNAME and DB_PASSWORD lines below
+
+```{r}
+metadata_df = getMetadata(database_info$kn99_host, 
+                          database_info$kn99_db_name, 
+                          Sys.getenv("DB_USERNAME"), 
+                          Sys.getenv("DB_PASSWORD"))
+```
+
+# Filter
+
+There are some experiment sets which have functions included to subset the metadata, for example `createNinetyMinuteInductionSet()`. But, in general, expect to have to filter the metadata yourself. This is a good resource [dplyr](https://dplyr.tidyverse.org/) as is [R for datascience](https://r4ds.had.co.nz/wrangle-intro.html)
+
+```{r}
+subset_metadata = metadata_df %>% 
+  
+  filter(experimentDesign=="Timecourse", genotype1=="CNAG_00000", timePoint %in% c(0, 1440))
+```
+
+Note in the filter above that a better method for filtering for "wildtype" strains is by the strain number. There are clinical strains in the database which also have genotype1 == "CNAG_00000".
+
+# Creating the nextflow sample sheet
+
+I do this from my local computer, so if I want to check if the files exist, I mount the /lts directory and then change the `sequence_dir_prefix` below to the path to `lts_sequence` from my local mount point. I then change the sequence_dir_prefix to the correct one for the cluster and print that sample_sheet out for processing.
+
+```{r}
+sequence_dir_prefix = "/scratch/mblab/$USER/scratch_sequence/fastq_set"
+
+sample_sheet = createNfCorePipelineSampleSheet(
+  subset_metadata,
+  "fastqFileNumber",
+  sequence_dir_prefix,
+  check_files_flag = FALSE
+)
+```
+
+# Move the files and check that they exist on the cluster
+
+(repeated in "running the pipeline")
+
+This is a frustrating step, and one that I haven't re-written a function for yet in the brentlabRnaSeqTools package. Right now, this is how I do it. If you are not a computational person in the lab, please just ask one of us to move the files for you
+
+```{bash}
+
+awk -F"," '{print $2}' sample_sheet.csv > fastq_lookup.txt
+
+mkdir scratch_sequence/fastq_set
+
+cat fastq_lookup.txt | while read line; do rsync -aHvR $line scratch_sequence/fastq_set/; done
+
+# and then I move the run directories back up to the level that I want them -- please just ask if this doesn't make sense. Eventually there will be a function in the brentlabRnaSeqTools. If you have a better bash method, please tell me.
+
+```
+
+
+Inspect and write out the sample sheet
+
+```{r}
+output_path = "/path/to/sample_sheet.csv"
+
+write_csv(sample_sheet, output_path)
+```
+
+# Running the nextflow pipeline
+
+See the article/vignette "Running the nextflow pipeline"

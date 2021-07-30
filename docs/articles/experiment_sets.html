@@ -54,6 +54,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/create_nextflow_samplesheet.html">create_nextflow_samplesheet</a>
+    </li>
+    <li>
       <a href="../articles/create_set.html">create_set</a>
     </li>
     <li>
@@ -61,6 +64,9 @@
     </li>
     <li>
       <a href="../articles/experiment_sets.html">experiment_sets</a>
+    </li>
+    <li>
+      <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
     </li>
   </ul>
 </li>
@@ -162,7 +168,7 @@
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x56495a1bdbd8&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x56033989c1c0&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="minuteinduction---with-doubles" class="section level1">
@@ -199,7 +205,7 @@
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x56495a39e258&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x560339b128e8&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 <p>To create a set with all doubles in the database, simply filter for samples which have a double deletion. For example:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -261,7 +267,7 @@
 <span class="co">#&gt;         "noTimepoint")) %&gt;% mutate(fastqFileName = str_remove(fastqFileName, </span>
 <span class="co">#&gt;         ".fastq.gz")) %&gt;% rename_with(toupper)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x56495b132908&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x56033a829e10&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="quality-assessment-1-filter" class="section level1">
