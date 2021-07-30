@@ -15,3 +15,4 @@ personal_eda
 packrat/bundles/
 data/library_date_size_factor_data.rda
 .Renviron
+docs/
