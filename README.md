@@ -36,21 +36,9 @@ remove.packages("brentlabRnaSeqTools")
 
 # Documentation
 
-if you used the `build_vignettes = TRUE` argument in install_github, then you can check the available vignettes like so:
-```
-> browseVignettes("brentlabRnaSeqTools")
-```
-Additionally, all functions and data variables are documented. If you type the following into your console:
-```
-> brentlabRnaSeqTools::
-```
-and hit tab, a list of functions and variables will appear. Select any, and place a question mark in the beginning to
-view the documentation:
-```
-> ?brentlabRnaSeqTools::getMetadata
-```
-There is also online documentation here, though the site is so full of advertisements it is hard to use:
-See [Online Documentation](https://rdrr.io/github/cmatKhan/brentlabRnaSeqTools/)
+[Click here for the online documentation](https://cmatkhan.github.io/brentlabRnaSeqTools/). This is a work in progress -- more, and better organized, documentation will come shortly.
+
+That said, the "articles" link in the navbar at the top of the page has some vignettes that will help with some common tasks -- please do look at those, if you are a user of this package.
 
 # issues  
 please do post issues to the issues tab. Please include the full error code and the command/context that lead to the error
