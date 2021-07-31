@@ -1,0 +1,11 @@
+pandoc: 2.7.3
+pkgdown: 1.6.1
+pkgdown_sha: ~
+articles:
+  create_nextflow_samplesheet: create_nextflow_samplesheet.html
+  create_set: create_set.html
+  database_interaction: database_interaction.html
+  experiment_sets: experiment_sets.html
+  running_the_nextflow_pipeline: running_the_nextflow_pipeline.html
+last_built: 2021-07-30T23:59Z
+
