@@ -348,43 +348,6 @@ parseBroadRnaseqcOutput = function(rnaseqc_dir, bam_suffix='.markdup.sorted.bam'
 
 }
 
-#'
-#' extract all metrics from the output of tin.py run on a batch of files
-#'
-#' @description presumably tin.py was run on a batch of samples, the output of
-#'              which is in some output dir. This function compiles all the
-#'              summary sheets and compiles them into a single dataframe
-#' @seealso \url{http://rseqc.sourceforge.net/#tin-py}
-#'
-#' @note Estimated Library Complexity is a Picard metric and is similar to markDuplicates and totalDeduplicatedPercent
-#'       \url{https://gatk.broadinstitute.org/hc/en-us/articles/360037591931-EstimateLibraryComplexity-Picard-}
-#'
-#' @importFrom dplyr select mutate select bind_rows
-#' @importFrom stringr str_remove
-#' @importFrom readr read_tsv
-#' @import ggplot2 ggExtra
-#'
-#' @param tin_output_dir directory containing the rnaseqc output
-#' @param bam_suffix the suffix to remove from the bam file sample names. Default to '.markdup.sorted.bam'
-#'                   for nf-co/rnaseq_pipeline star_salmon output \url{https://nf-co.re/rnaseq}
-#'
-#' @return a list with items full_table, subset, rRna_vs_epe, rRna_vs_epe (see description)
-#'
-#' @export
-compileTinOutput = function(tin_output_dir, bam_suffix='.markdup.sorted.bam'){
-
-  message('reading in tin.py summaries...')
-  tin_summary_list = Sys.glob(file.path(tin_output_dir, "*summary*"))
-  tin_df_list = suppressMessages(lapply(tin_summary_list, read_tsv))
-
-  message('merging tin.py summaries...')
-  tin_df = bind_rows(tin_df_list)
-  # todo: do rename in mutate, then select
-  tin_df %>%
-    mutate(Sample = str_remove(Bam_file, bam_suffix)) %>%
-    select(-Bam_file)
-}
-
 #' decompose sums of powers of two to a list of the summed powers
 #'
 #' @description eg 18 = 2 + 16 decomposes to 1, 4
@@ -449,4 +412,338 @@ outlierFence = function(metric_vector){
        upper_inner = metric_quantiles[[2]] + metric_iqr_inner_fence,
        upper_outer = metric_quantiles[[2]] + metric_iqr_outer_fence
   )
+}
+
+#'
+#' Join QC tables (not qc_metrics) in qcExplorer input sqlite database
+#' @description used to create the table displayed in the qcExplorer
+#'
+#' @importFrom purrr prepend reduce
+#' @importFrom dplyr filter pull select
+#' @importFrom RSQLite SQLite dbConnect dbReadTable dbDisconnect
+#'
+#' @param ui_selected_columns a character vector of the selected columns
+#' @param id_field the common field between all QC tables
+#' @param sample_df name of the table containing sample metadata
+#' @param status_df name of the table containing the QC metrics (this table
+#'                  does not have the id column)
+#' @param qc_database_path path to the sqlite qc database
+#'
+#' @return the merged database based input
+createMergedTable = function(ui_selected_columns, id_field, sample_df,
+                             status_df, qc_database_path){
+  selected_columns =
+    if(is.null(ui_selected_columns)){
+      id_field
+    } else{
+      c(id_field, ui_selected_columns)
+    }
+
+  tables_with_selected_columns = status_df %>%
+    filter(metric %in% selected_columns) %>%
+    pull(source) %>%
+    unique()
+
+  tables_with_selected_columns = c(tables_with_selected_columns)
+
+  # subset the input table for only the selected fields from that table
+  subsetDatabaseTables = function(db_table){
+
+    relevant_fields =
+      colnames(db_table)[colnames(db_table) %in% selected_columns]
+
+    db_table %>% dplyr::select(relevant_fields)
+
+  }
+
+  # get relevant tables
+  qc_database_connection = dbConnect(RSQLite::SQLite(), qc_database_path)
+  selected_table_list = lapply(tables_with_selected_columns, function(x)
+    dbReadTable(qc_database_connection, x,
+                check.names = FALSE))
+  dbDisconnect(qc_database_connection)
+
+  # see https://stackoverflow.com/a/33177426/9708266
+  selected_table_list = prepend(list(sample_df), selected_table_list, before = 1)
+
+  selected_table_list = lapply(selected_table_list, subsetDatabaseTables)
+
+  # cite: https://stackoverflow.com/a/34393416/9708266
+  selected_table_list %>% reduce(left_join, by=id_field)
+}
+
+#'
+#' create the metric status dataframe used to set thresholds and flag samples
+#' in the QC explorer
+#' @description columns should be source, which corresponds to the tablenames
+#' in the QC explorer database, metric, which corresponds the field in the table
+#' threshold, which may be set by the user and is initially NA,
+#' comparative
+#'
+#' @importFrom dplyr bind_rows mutate
+#' @importFrom stringr str_detect
+#' @importFrom readr read_tsv
+#'
+#' @param user_metric_vector either an empty string if there are no user
+#' defined metrics, or a character vector of metrics, eg c("epe", "perturbed_coverage")
+#' @param multiqc_output path to the multiqc output data directory of
+#' nf-co/rnaseq_pipeline
+#'
+#' @return a data frame with columns source, metric, alias, threshold, status
+#'
+#' @export
+createStatusDf = function(user_metric_vector, multiqc_output){
+
+  if(user_metric_vector != ""){
+    # note: alias can be a simplified name of the metric vector. Blank here
+    # just name metric something reasonable. Alias is intended for multiqc output
+    custom_status_df = tibble(source = rep("user", length(user_metric_vector)),
+                              metric = user_metric_vector,
+                              alias = rep("", length(user_metric_vector)),
+                              threshold = NA,
+                              comparative = "",
+                              status = seq(1, length(user_metric_vector)))
+  }
+
+  qc_data_paths = getNfCoMultiqcDataPaths(multiqc_output)
+
+  qc_data_list = lapply(qc_data_paths, function(x)
+    suppressMessages(read_tsv(x, name_repair = "minimal")))
+  names(qc_data_list) = names(qc_data_paths)
+
+  qcToStatusReformater = function(df, source_name){
+    metric_vector = colnames(df)[str_detect(colnames(df), "Sample", negate = TRUE)]
+    tibble(source = rep(source_name, length(metric_vector)),
+           metric = metric_vector,
+           alias = "",
+           comparative = "",
+           threshold = NA,
+           status = NA)
+  }
+
+  qc_status_df = bind_rows(lapply(names(qc_data_list), function(x)
+    qcToStatusReformater(qc_data_list[[x]], x) ))
+
+  # combine user, multiqc to form the one status_df to rule them all
+  last_user_status = if(user_metric_vector != ""){
+    nrow(custom_status_df)
+  } else{
+    0
+  }
+
+  qc_status_df = qc_status_df %>%
+    mutate(status = seq(1, nrow(qc_status_df))+last_user_status)
+
+  if(user_metric_vector != ""){
+    bind_rows(custom_status_df, qc_status_df)
+  } else{
+    qc_status_df
+  }
+}
+
+#'
+#' create the sqlite database as input to qcExplorer
+#' @description sample_df (metadata on the samples) and any QC tables must
+#' share a common ID column. qc_metrics_df contains the column names of the QC
+#' metrics with columns threshold, status and comparative which store information
+#' on how to flag samples which violate the threshold. Writes database to
+#' specified file
+#'
+#' @importFrom dplyr mutate left_join select arrange
+#' @importFrom readr read_tsv
+#' @importFrom RSQLite dbConnect SQLite dbWriteTable dbDisconnect
+#'
+#' @param sample_df a tibble with an id column which corresponds to the id column
+#' of the QC metrics tables and columns containing metadata on samples
+#' @param status_df a tibble with columns metric, alias, threshold, status,
+#' comparative for use in flagging samples
+#' @param qc_df_list list of qc table dataframes -- already read in.
+#' see articles in documentation
+#' reports from the nf-co/rnaseq pipeline
+#' @param database_output output path (full, with .sqlite extension) for the
+#' sqlite database
+#' @param id_column common id column between sample_df and QC tables
+#'
+#' @export
+createDatabase = function(sample_df, status_df, qc_df_list, database_output,
+                          id_column){
+
+
+  # structure: Sample, id, audit, status, statusDecomp where Sample is from
+  # the nextflow samplesheet, sample_id is a unique identifier for the same sample
+  # which will allow join back to sample metadata in database, audit is a boolean,
+  # status is the sum of bit statuses and statusDecomp is the list of powers of 2
+  # to which the bit status decomposes
+  #
+  # there needs to be an id column in sample_df (eg make fastqFileNumber into id)
+
+  sample_df = sample_df %>%
+    mutate(audit_flag=NA, status=as.numeric(NA), statusDecomp="")
+
+  add_id_col = function(qc_table){
+    qc_colnames = c(id_column, colnames(qc_table))
+    # qc_colnames = qc_colnames[!qc_colnames == "Sample"]
+
+    qc_table %>%
+      left_join(sample_df, by=id_column) %>%
+      dplyr::select(qc_colnames) %>%
+      arrange(!!rlang::sym(id_column))
+  }
+
+  qc_data_list_with_id = lapply(qc_df_list, add_id_col)
+  sample_df = arrange(sample_df, !!rlang::sym(id_column))
+
+  con <- dbConnect(RSQLite::SQLite(), database_output)
+
+  dbWriteTable(con, "sample", sample_df)
+  dbWriteTable(con, "qc_metrics", status_df)
+  lapply(names(qc_data_list_with_id), function(x)
+    dbWriteTable(con, x, qc_data_list_with_id[[x]]))
+
+  dbDisconnect(con)
+}
+
+#'
+#' get relevant QC metrics tables from nf-co/rnaseq multiqc output
+#'
+#' @importFrom stringr str_detect str_remove
+#'
+#' @param multiqc_output path to multiqc_output
+#'
+#' @return list of full paths
+#'
+#' @export
+getNfCoMultiqcDataPaths = function(multiqc_output){
+
+  qc_data_paths = list.files(str_remove(multiqc_output, "/$"),
+                             full.names = TRUE)
+
+  qc_data_paths = qc_data_paths[
+    str_detect(basename(qc_data_paths), "^multiqc|.+featurecounts_biotype_.+|^tin|^qualimap")]
+
+  qc_data_paths = qc_data_paths[
+    str_detect(qc_data_paths,
+               "warning|fastqc|sources|idxstats|picard|json$|log$",
+               negate = TRUE)]
+
+  names(qc_data_paths) = tools::file_path_sans_ext(
+    basename(qc_data_paths))
+
+  qc_data_paths
+}
+
+#'
+#' add new_qc_database tables to old_qc_database_tables
+#'
+#' @importFrom RSQLite dbConnect dbDisconnect dbWriteTable dbReadTable
+#'
+#' @param old_qc_database_path connection to existing qc database -- the
+#' one to be added to
+#' @param new_qc_database_path connection to the new qc database
+#' @param qc_tablenames the tables to be added
+#'
+#' @export
+addTablesToQcDatabase = function(old_qc_database_path,
+                                 new_qc_database_path,
+                                 qc_tablenames){
+
+  old_qc_database_connection = dbConnect(RSQLite::SQLite(), old_qc_database_path)
+
+  new_qc_database_connection = dbConnect(RSQLite::SQLite(), new_qc_database_path)
+
+  # TODO make sure names of new_qc_tables are in the old_qc_database_donnection
+  #      tables
+
+  lapply(qc_tablenames, function(x)
+    dbWriteTable(old_qc_database_connection, x,
+                 dbReadTable(new_qc_database_connection,x,check.names = FALSE),
+                 append = TRUE))
+
+  dbDisconnect(old_qc_database_connection)
+  dbDisconnect(new_qc_database_connection)
+
+}
+
+#'
+#' extract all metrics from the output of tin.py run on a batch of files
+#'
+#' @description presumably tin.py was run on a batch of samples, the output of
+#'              which is in some output dir. This function compiles all the
+#'              summary sheets and compiles them into a single dataframe
+#' @seealso \url{http://rseqc.sourceforge.net/#tin-py}
+#'
+#' @note Estimated Library Complexity is a Picard metric and is similar to markDuplicates and totalDeduplicatedPercent
+#'       \url{https://gatk.broadinstitute.org/hc/en-us/articles/360037591931-EstimateLibraryComplexity-Picard-}
+#'
+#' @importFrom dplyr select mutate select bind_rows
+#' @importFrom stringr str_remove
+#' @importFrom readr read_tsv
+#' @import ggplot2 ggExtra
+#'
+#' @param tin_output_dir directory containing the rnaseqc output
+#' @param bam_suffix the suffix to remove from the bam file sample names. Default to '.markdup.sorted.bam'
+#'                   for nf-co/rnaseq_pipeline star_salmon output \url{https://nf-co.re/rnaseq}
+#'
+#' @return a list with items full_table, subset, rRna_vs_epe, rRna_vs_epe (see description)
+#'
+#' @export
+compileTinOutput = function(tin_output_dir, bam_suffix='.markdup.sorted.bam'){
+
+  message('reading in tin.py summaries...')
+  tin_summary_list = Sys.glob(file.path(tin_output_dir, "*summary*"))
+  tin_df_list = suppressMessages(lapply(tin_summary_list, read_tsv))
+
+  message('merging tin.py summaries...')
+  tin_df = bind_rows(tin_df_list)
+  # todo: do rename in mutate, then select
+  tin_df %>%
+    mutate(Sample = str_remove(Bam_file, bam_suffix)) %>%
+    select(-Bam_file)
+}
+
+#'
+#' parse qualimap summary output
+#' @description extract metrics from the file rnaseq_qc_results.txt in nf-co/rnaseq qualimap
+#' output
+#'
+#' @importFrom readr read_lines
+#' @importFrom tidyr separate
+#' @importFrom purrr map
+#' @importFrom plyr ldply
+#'
+#' @param sample_name name of the sample which will go into the Sample column.
+#' See example
+#' @param qualimap_results path to rnaseq_qc_results.txt for a given sample
+#'
+#' @return a dataframe with columns sample, exonic, intergenic, overlapping_exon,
+#' count, percent
+#'
+#' @examples
+#' \dontrun{
+#'    pool_plate2_qualimaps_files = Sys.glob("path/to/qualimap/*/rnaseq_qc_results.txt")
+#'    names(pool_plate2_qualimaps_files) =
+#'        basename(dirname(pool_plate2_qualimaps_files))
+#'    pool_plate2_qualimap_df = bind_rows(lapply(names(pool_plate2_qualimaps_files),
+#'        function(x)
+#'            compileQualimapSummaryMetrics(x, pool_plate2_qualimaps_files[[x]]))) %>%
+#'            arrange(Sample)
+#' }
+#'
+#' @export
+compileQualimapSummaryMetrics = function(sample_name, qualimap_results){
+
+  file = read_lines(qualimap_results)
+
+  file[str_detect(file,
+                  "\\s+exonic|\\s+intronic|\\s+intergenic|\\overlapping")] %>%
+    str_split("=") %>%
+    map(str_trim, side="both") %>%
+    ldply() %>%
+    separate(V2, c('count', 'percent'), sep="\\s") %>%
+    mutate(count = str_remove_all(count, ","),
+           percent = str_remove_all(percent, "\\(|\\)|%")) %>%
+    pivot_wider(names_from=V1, values_from = c(count, percent)) %>%
+    mutate(Sample = sample_name) %>%
+    dplyr::select(c(Sample, colnames(.)))
+
 }

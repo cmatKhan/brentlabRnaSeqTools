@@ -97,3 +97,25 @@ loadAnnotationDatabase = function(annotation_db_path){
 is_integer64 <- function(x){
   class(x)=="integer64"
 }
+
+#'
+#' parse text comparative sentence
+#' @description return logical for sentence such as "3 > 4")
+#'
+#' @param value1 a number represented as a string, eg "3"
+#' @param comparative one of c(">", ">=", "<", "<=", "==")
+#' @param value2 a number represented as a string, eg "4"
+#'
+#' @return a logical as if the characters were evaluated such as 3 > 4
+#'
+#' @export
+parseComparatives = function(value1, comparative, value2){
+  switch (comparative,
+          ">"  = value1 > value2,
+          ">=" = value1 >= value2,
+          "<"  = value1 < value2,
+          "<=" = value1 <= value2,
+          "==" = value1 == value2,
+          stop("comparative not recognized")
+  )
+}

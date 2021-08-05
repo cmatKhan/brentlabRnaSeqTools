@@ -106,6 +106,9 @@
       <a href="../articles/experiment_sets.html">experiment_sets</a>
     </li>
     <li>
+      <a href="../articles/qcExplorer.html">qcExplorer</a>
+    </li>
+    <li>
       <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
     </li>
   </ul>
@@ -157,6 +160,12 @@
       <tr>
         
         <td>
+          <p><code><a href="addTablesToQcDatabase.html">addTablesToQcDatabase()</a></code> </p>
+        </td>
+        <td><p>add new_qc_database tables to old_qc_database_tables</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="archiveDatabase.html">archiveDatabase()</a></code> </p>
         </td>
         <td><p>pull entire database (not counts) and save to output_dir for archival purposes</p></td>
@@ -178,6 +187,12 @@
           <p><code><a href="calculateRLE.html">calculateRLE()</a></code> </p>
         </td>
         <td><p>calculate RLE of a numeric dataframe</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="compileQualimapSummaryMetrics.html">compileQualimapSummaryMetrics()</a></code> </p>
+        </td>
+        <td><p>parse qualimap summary output</p></td>
       </tr><tr>
         
         <td>
@@ -211,6 +226,12 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="createDatabase.html">createDatabase()</a></code> </p>
+        </td>
+        <td><p>create the sqlite database as input to qcExplorer</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="createEnvPertSet.html">createEnvPertSet()</a></code> </p>
         </td>
         <td><p>filter combined_df for environmental perturbation sample set</p></td>
@@ -220,6 +241,12 @@
           <p><code><a href="createInductionSetTally.html">createInductionSetTally()</a></code> </p>
         </td>
         <td><p>create 90 minute induction set tally</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="createMergedTable.html">createMergedTable()</a></code> </p>
+        </td>
+        <td><p>Join QC tables (not qc_metrics) in qcExplorer input sqlite database</p></td>
       </tr><tr>
         
         <td>
@@ -250,6 +277,13 @@
           <p><code><a href="createQCdatabase.html">createQCdatabase()</a></code> </p>
         </td>
         <td><p>create a sqlite database to hold the 'custom' qc data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="createStatusDf.html">createStatusDf()</a></code> </p>
+        </td>
+        <td><p>create the metric status dataframe used to set thresholds and flag samples
+in the QC explorer</p></td>
       </tr><tr>
         
         <td>
@@ -325,6 +359,12 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="getNfCoMultiqcDataPaths.html">getNfCoMultiqcDataPaths()</a></code> </p>
+        </td>
+        <td><p>get relevant QC metrics tables from nf-co/rnaseq multiqc output</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="getRawCounts.html">getRawCounts()</a></code> </p>
         </td>
         <td><p>Get combined raw counts</p></td>
@@ -397,6 +437,12 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="parseComparatives.html">parseComparatives()</a></code> </p>
+        </td>
+        <td><p>parse text comparative sentence</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="patchTable.html">patchTable()</a></code> </p>
         </td>
         <td><p>PATCH entries in database table</p></td>
@@ -436,6 +482,12 @@
           <p><code><a href="proteinCodingCount.html">proteinCodingCount()</a></code> </p>
         </td>
         <td><p>get total protein coding count from count dataframe</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="qcExplorer.html">qcExplorer()</a></code> </p>
+        </td>
+        <td><p>Explore QC metrics and set thresholds</p></td>
       </tr><tr>
         
         <td>

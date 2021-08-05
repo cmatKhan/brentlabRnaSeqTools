@@ -226,24 +226,23 @@ postFastqSheet = function(database_fastq_url, auth_token, new_fastq_path){
   # see utils
   fastq_df = brentlabRnaSeqTools::readInData(new_fastq_path)
 
-  # add columns frequently omitted
-  # TODO FIX THIS -- DO NOT OVERWRITE WITH BLANKS IF PRESENT
-  # fastq_df$fastqObservations = ""
-  # fastq_df$laneNumber = ""
+  fastq_colnames = colnames(fastq_df)
 
   augment_fastq_df = fastq_df %>%
-    select(-c(libraryDate, libraryPreparer)) %>%
-    mutate(fastqObservations = "") %>%
-    mutate(laneNumber = "") %>%
+    {if("libraryDate" %in% fastq_colnames)
+      select(.,-libraryDate)
+      else .} %>%
+    {if("libraryPreparer" %in% fastq_colnames)
+      select(.,-libraryPreparer)
+      else .} %>%
+    {if(!"fastqObservations" %in% fastq_colnames)
+      mutate(.,fastqObservations = "")
+      else .} %>%
+    {if(!"laneNumber" %in% fastq_colnames)
+      mutate(.,laneNumber = "")
+      else .} %>%
     mutate(volumePooled = round(as.numeric(volumePooled), 15)) %>%
     mutate(tapestationConc = round(as.numeric(tapestationConc), 4))
-
-  # # round to appropriate lengths
-  # fastq_df$volumePooled = round(fastq_df$volumePooled, 15)
-  # fastq_df$tapestationConc = round(fastq_df$tapestationConc, 4)
-  #
-  # # cast librarydate
-  # fastq_df$libraryDate = as.Date(fastq_df$libraryDate)
 
   post_body = jsonlite::toJSON(augment_fastq_df, auto_unbox = TRUE)
 
@@ -314,13 +313,13 @@ postCounts = function(database_counts_url, run_number, auth_token, new_counts_pa
     names(counts) = column
 
     post_body = jsonlite::toJSON(list(fastqFileNumber = fastqFileNumber_lookup_list[[column]],
-                     rawCounts = counts), auto_unbox = TRUE)
+                                      rawCounts = counts), auto_unbox = TRUE)
 
     res = POST(url=database_counts_url,
-        add_headers(Authorization = paste("token" , auth_token, sep=" ")),
-        content_type("application/json"),
-        body=post_body,
-        encode='json')
+               add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+               content_type("application/json"),
+               body=post_body,
+               encode='json')
 
     res_list[[column]] = res
 
@@ -444,13 +443,15 @@ patchTable = function(database_table_url, auth_token, update_df, id_col){
     id = update_df[[i,id_col]]
     row_as_list = jsonlite::toJSON(as.list(dplyr::select(update_df[i,], -id_col)), auto_unbox = TRUE, pretty=TRUE)
 
-    url = paste(database_table_url, paste0(as.character(id), "/"), sep="/")
+    base_url = str_remove(database_table_url, "/$")
+
+    url = paste(base_url, paste0(as.character(id), "/"), sep="/")
 
     res = PATCH(url=url,
-               add_headers(Authorization = paste("token" , auth_token, sep=" ")),
-               content_type("application/json"),
-               body=row_as_list,
-               encode="json")
+                add_headers(Authorization = paste("token" , auth_token, sep=" ")),
+                content_type("application/json"),
+                body=row_as_list,
+                encode="json")
 
     res_list[[as.character(id)]] = res
 

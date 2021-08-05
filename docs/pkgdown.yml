@@ -6,6 +6,7 @@ articles:
   create_set: create_set.html
   database_interaction: database_interaction.html
   experiment_sets: experiment_sets.html
+  qcExplorer: qcExplorer.html
   running_the_nextflow_pipeline: running_the_nextflow_pipeline.html
-last_built: 2021-07-30T21:07Z
+last_built: 2021-08-03T21:55Z
 

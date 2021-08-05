@@ -1,0 +1,130 @@
+---
+title: "qcExplorer"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{qcExplorer}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# UNDER DEVELOPMENT
+
+These functions are under active development. Admittedly, there is not much difference between this set of functions and the rest in terms of how 'under development' they are. But, these functions rely on the libraries [shiny](https://mastering-shiny.org/) and its derivative, [shinydashboard](https://rstudio.github.io/shinydashboard/), and I am still learning this framework. As a result, there is a good deal of restructuring that will be happening as I learn more about how best to structure a shiny app, especially one inside of another package like this.
+
+That said, in functionality, not much will change. Mostly what you will see is changes in the names of arguments and their documentation -- right now, the language in the documentation is a bit rough. More placeholders and 'notes to self' than effective documentation for others, though I do expect that if you are interested in using these functions that with some clarifying questions the documentation will be sufficient, especially with the examples below.
+
+
+```{r setup}
+library(brentlabRnaSeqTools)
+```
+
+# Creating the QC Database
+
+The main input to `qcExplorer()` is a SQLite database. To create this database, we need the following:
+
+1. A "sample_df", or metadata *
+2. A directory of tables, in tsv format with the extension .txt *
+3. A qc metric df, sometimes called status_df in the function documentation. This name will evolve into something more descriptive eventually.
+
+* Items 1 and 2 must share 1 column, the id column. This column must uniquely identify the samples
+
+## Compiling the Qualimaps output
+
+This is not compiled by multiqc (part of the nf-co/rnaseq pipeline). You may find the qualimap output in the star_[salmon/RSEM] subdirectory of the nf-co/rnaseq results directory.
+
+Here is an example of how to compile the qualimap output into a qc sheet -- note, this is only for genomic origin information.
+
+```{r}
+
+pool_plate1_qualimaps_files = Sys.glob("/mnt/htcf_lts/llfs_rnaseq/nf_co_rnaseq_pipeline_results/pool_plate1_results/star_salmon/qualimap/*/rnaseq_qc_results.txt")
+
+names(pool_plate1_qualimaps_files) = basename(dirname(pool_plate1_qualimaps_files))
+
+pool_plate2_qualimaps_files = Sys.glob("/mnt/htcf_lts/llfs_rnaseq/nf_co_rnaseq_pipeline_results/pool_plate2_results/star_salmon/qualimap/*/rnaseq_qc_results.txt")
+
+names(pool_plate2_qualimaps_files) = basename(dirname(pool_plate2_qualimaps_files))
+
+pool_plate1_qualimap_df = bind_rows(lapply(names(pool_plate1_qualimaps_files), function(x) compileQualimapSummaryMetrics(x, pool_plate1_qualimaps_files[[x]])))
+
+write_tsv(pool_plate1_qualimap_df, "data/pool_plate1_multiqc/qualimap_genomicOrigins.txt")
+
+pool_plate2_qualimap_df = bind_rows(lapply(names(pool_plate2_qualimaps_files), function(x) compileQualimapSummaryMetrics(x, pool_plate2_qualimaps_files[[x]])))
+
+write_tsv(pool_plate2_qualimap_df, "data/pool_plate2_multiqc/qualimap_genomicOrigins.txt")
+
+qualimap_df = bind_rows(pool_plate1_qualimap_df, pool_plate2_qualimap_df)
+
+write_csv(qualimap_df, "data/pool_plate1qualimap_both_pools.csv")
+
+
+```
+
+## Compile the tin.py output
+
+If you ran tin.py (part of RseQC), then you may want to use the following function (part of the brentlabRnaSeqTools) package:
+
+```{r}
+
+tin_df = compileTinOutput("data/tin_output")
+
+tin_df_augment = tin_df %>%
+  mutate(Sample = str_remove(Sample, ".genome_accepted_hits.bam"))
+  
+
+write_csv(tiny_df_augment, "data/compiled_tin_both_pools.csv")
+
+```
+
+# sample_df and status_df
+
+## sample df
+sample_df is sample metadata -- you need to provide that. Critically, it must have a common column with all QC tables. It should also include any batch parameters you wish to explore
+
+## status df
+
+status_df may be created manually, or with the function below. Feel free to add to it as needed. It must include all metrics that you wish to use in the qcExplorer
+
+```{r}
+status_df = createStatusDf("", "data/pool_plate1_multiqc")
+```
+
+In this case, we want to combine multiple batches of QC tables before making the database
+
+```{r}
+
+pool_plate1_paths = getNfCoMultiqcDataPaths("data/pool_plate1_multiqc/")
+pool_plate2_paths = getNfCoMultiqcDataPaths("data/pool_plate2_multiqc/")
+
+pool_plate1_df_list = lapply(pool_plate1_paths, read_tsv, name_repair = 'minimal')
+
+pool_plate2_df_list = lapply(pool_plate2_paths, read_tsv, name_repair = 'minimal')
+
+all_qc_tables = map2(pool_plate1_df_list, pool_plate2_df_list, bind_rows)
+
+# removing na rows b/c this dataframe also stores lane info when present
+all_qc_tables$multiqc_general_stats = all_qc_tables$multiqc_general_stats %>%
+  filter(!is.na(`Samtools_mqc-generalstats-samtools-flagstat_total`))
+
+```
+
+```{r}
+database_path = "data/qc_database.sqlite"
+id_field = "Sample"
+
+createDatabase(sample_df, status_df, all_qc_tables, database_path, id_field)
+```
+
+```{r}
+batch_choices = "batch"
+
+qcExplorer(database_path, "sample", "qc_metrics", id_field, batch_choices)
+```
+
