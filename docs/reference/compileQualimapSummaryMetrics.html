@@ -152,6 +152,11 @@ output</p>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
+      <th>sample_name</th>
+      <td><p>name of the sample which will go into the Sample column.
+See example</p></td>
+    </tr>
+    <tr>
       <th>qualimap_results</th>
       <td><p>path to rnaseq_qc_results.txt for a given sample</p></td>
     </tr>
@@ -162,6 +167,18 @@ output</p>
     <p>a dataframe with columns sample, exonic, intergenic, overlapping_exon,
 count, percent</p>
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+   <span class='va'>pool_plate2_qualimaps_files</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Sys.glob.html'>Sys.glob</a></span><span class='op'>(</span><span class='st'>"path/to/qualimap/*/rnaseq_qc_results.txt"</span><span class='op'>)</span>
+   <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>pool_plate2_qualimaps_files</span><span class='op'>)</span> <span class='op'>=</span>
+       <span class='fu'><a href='https://rdrr.io/r/base/basename.html'>basename</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/basename.html'>dirname</a></span><span class='op'>(</span><span class='va'>pool_plate2_qualimaps_files</span><span class='op'>)</span><span class='op'>)</span>
+   <span class='va'>pool_plate2_qualimap_df</span> <span class='op'>=</span> <span class='fu'>bind_rows</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>lapply</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>pool_plate2_qualimaps_files</span><span class='op'>)</span>,
+       <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
+           <span class='fu'>compileQualimapSummaryMetrics</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>pool_plate2_qualimaps_files</span><span class='op'>[[</span><span class='va'>x</span><span class='op'>]</span><span class='op'>]</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+           <span class='fu'>arrange</span><span class='op'>(</span><span class='va'>Sample</span><span class='op'>)</span>
+<span class='op'>}</span>
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
