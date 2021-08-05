@@ -66,6 +66,9 @@
       <a href="../articles/experiment_sets.html">experiment_sets</a>
     </li>
     <li>
+      <a href="../articles/qcExplorer.html">qcExplorer</a>
+    </li>
+    <li>
       <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
     </li>
   </ul>
@@ -93,7 +96,7 @@
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>experiment_sets</h1>
             
-            <h4 class="date">07/31/2021</h4>
+            <h4 class="date">08/05/2021</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/vignettes/experiment_sets.Rmd"><code>vignettes/experiment_sets.Rmd</code></a></small>
       <div class="hidden name"><code>experiment_sets.Rmd</code></div>
@@ -168,7 +171,7 @@
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55ae14088a90&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55f1374663a0&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="minuteinduction---with-doubles" class="section level1">
@@ -205,7 +208,7 @@
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55ae47e0adb8&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55f1363dedc0&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 <p>To create a set with all doubles in the database, simply filter for samples which have a double deletion. For example:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -267,7 +270,7 @@
 <span class="co">#&gt;         "noTimepoint")) %&gt;% mutate(fastqFileName = str_remove(fastqFileName, </span>
 <span class="co">#&gt;         ".fastq.gz")) %&gt;% rename_with(toupper)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55ae47b35020&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55f12a05b740&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="quality-assessment-1-filter" class="section level1">

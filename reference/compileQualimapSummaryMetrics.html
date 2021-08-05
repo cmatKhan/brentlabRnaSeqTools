@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Connect to a remote postgresql database — connectToDatabase • brentlabRnaSeqTools</title>
+<title>parse qualimap summary output — compileQualimapSummaryMetrics • brentlabRnaSeqTools</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,9 @@
 
 
 
-<meta property="og:title" content="Connect to a remote postgresql database — connectToDatabase" />
-<meta property="og:description" content="Use the RPostgres package to connect to a remote postgresql database" />
+<meta property="og:title" content="parse qualimap summary output — compileQualimapSummaryMetrics" />
+<meta property="og:description" content="extract metrics from the file rnaseq_qc_results.txt in nf-co/rnaseq qualimap
+output" />
 
 
 
@@ -135,53 +136,49 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Connect to a remote postgresql database</h1>
-    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/DatabaseInteractionFunctions.R'><code>R/DatabaseInteractionFunctions.R</code></a></small>
-    <div class="hidden name"><code>connectToDatabase.Rd</code></div>
+    <h1>parse qualimap summary output</h1>
+    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/QualityAssessmentFunctions.R'><code>R/QualityAssessmentFunctions.R</code></a></small>
+    <div class="hidden name"><code>compileQualimapSummaryMetrics.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Use the RPostgres package to connect to a remote postgresql database</p>
+    <p>extract metrics from the file rnaseq_qc_results.txt in nf-co/rnaseq qualimap
+output</p>
     </div>
 
-    <pre class="usage"><span class='fu'>connectToDatabase</span><span class='op'>(</span>
-  <span class='va'>database_host</span>,
-  <span class='va'>database_name</span>,
-  <span class='va'>database_user</span>,
-  <span class='va'>database_password</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>compileQualimapSummaryMetrics</span><span class='op'>(</span><span class='va'>sample_name</span>, <span class='va'>qualimap_results</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>database_host</th>
-      <td><p>if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com</p></td>
+      <th>sample_name</th>
+      <td><p>name of the sample which will go into the Sample column.
+See example</p></td>
     </tr>
     <tr>
-      <th>database_name</th>
-      <td><p>name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly</p></td>
-    </tr>
-    <tr>
-      <th>database_user</th>
-      <td><p>a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info</p></td>
-    </tr>
-    <tr>
-      <th>database_password</th>
-      <td><p>password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info</p></td>
+      <th>qualimap_results</th>
+      <td><p>path to rnaseq_qc_results.txt for a given sample</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="source"><a class="anchor" href="#source"></a>Source</h2>
-
-    <p><a href='https://rpostgres.r-dbi.org/'>https://rpostgres.r-dbi.org/</a></p>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A DBI connection to the remote database</p>
-    <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
+    <p>a dataframe with columns sample, exonic, intergenic, overlapping_exon,
+count, percent</p>
 
-    <p>for information on using R environmental files, see <a href='https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf'>https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf</a></p>
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+   <span class='va'>pool_plate2_qualimaps_files</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Sys.glob.html'>Sys.glob</a></span><span class='op'>(</span><span class='st'>"path/to/qualimap/*/rnaseq_qc_results.txt"</span><span class='op'>)</span>
+   <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>pool_plate2_qualimaps_files</span><span class='op'>)</span> <span class='op'>=</span>
+       <span class='fu'><a href='https://rdrr.io/r/base/basename.html'>basename</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/basename.html'>dirname</a></span><span class='op'>(</span><span class='va'>pool_plate2_qualimaps_files</span><span class='op'>)</span><span class='op'>)</span>
+   <span class='va'>pool_plate2_qualimap_df</span> <span class='op'>=</span> <span class='fu'>bind_rows</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>lapply</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>pool_plate2_qualimaps_files</span><span class='op'>)</span>,
+       <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
+           <span class='fu'>compileQualimapSummaryMetrics</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>pool_plate2_qualimaps_files</span><span class='op'>[[</span><span class='va'>x</span><span class='op'>]</span><span class='op'>]</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+           <span class='fu'>arrange</span><span class='op'>(</span><span class='va'>Sample</span><span class='op'>)</span>
+<span class='op'>}</span>
 
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Connect to a remote postgresql database — connectToDatabase • brentlabRnaSeqTools</title>
+<title>create the sqlite database as input to qcExplorer — createDatabase • brentlabRnaSeqTools</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,12 @@
 
 
 
-<meta property="og:title" content="Connect to a remote postgresql database — connectToDatabase" />
-<meta property="og:description" content="Use the RPostgres package to connect to a remote postgresql database" />
+<meta property="og:title" content="create the sqlite database as input to qcExplorer — createDatabase" />
+<meta property="og:description" content="sample_df (metadata on the samples) and any QC tables must
+share a common ID column. qc_metrics_df contains the column names of the QC
+metrics with columns threshold, status and comparative which store information
+on how to flag samples which violate the threshold. Writes database to
+specified file" />
 
 
 
@@ -135,52 +139,51 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Connect to a remote postgresql database</h1>
-    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/DatabaseInteractionFunctions.R'><code>R/DatabaseInteractionFunctions.R</code></a></small>
-    <div class="hidden name"><code>connectToDatabase.Rd</code></div>
+    <h1>create the sqlite database as input to qcExplorer</h1>
+    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/QualityAssessmentFunctions.R'><code>R/QualityAssessmentFunctions.R</code></a></small>
+    <div class="hidden name"><code>createDatabase.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Use the RPostgres package to connect to a remote postgresql database</p>
+    <p>sample_df (metadata on the samples) and any QC tables must
+share a common ID column. qc_metrics_df contains the column names of the QC
+metrics with columns threshold, status and comparative which store information
+on how to flag samples which violate the threshold. Writes database to
+specified file</p>
     </div>
 
-    <pre class="usage"><span class='fu'>connectToDatabase</span><span class='op'>(</span>
-  <span class='va'>database_host</span>,
-  <span class='va'>database_name</span>,
-  <span class='va'>database_user</span>,
-  <span class='va'>database_password</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>createDatabase</span><span class='op'>(</span><span class='va'>sample_df</span>, <span class='va'>status_df</span>, <span class='va'>qc_df_list</span>, <span class='va'>database_output</span>, <span class='va'>id_column</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>database_host</th>
-      <td><p>if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com</p></td>
+      <th>sample_df</th>
+      <td><p>a tibble with an id column which corresponds to the id column
+of the QC metrics tables and columns containing metadata on samples</p></td>
     </tr>
     <tr>
-      <th>database_name</th>
-      <td><p>name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly</p></td>
+      <th>status_df</th>
+      <td><p>a tibble with columns metric, alias, threshold, status,
+comparative for use in flagging samples</p></td>
     </tr>
     <tr>
-      <th>database_user</th>
-      <td><p>a user of the actual database, with some level of permissions. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info</p></td>
+      <th>qc_df_list</th>
+      <td><p>list of qc table dataframes -- already read in.
+see articles in documentation
+reports from the nf-co/rnaseq pipeline</p></td>
     </tr>
     <tr>
-      <th>database_password</th>
-      <td><p>password to the database user. You'll need to check with the database maintainer for this. It is suggested that you use a .Renviron file in your local project (make sure it is completely ignored by git, R, etc) to store this info</p></td>
+      <th>database_output</th>
+      <td><p>output path (full, with .sqlite extension) for the
+sqlite database</p></td>
+    </tr>
+    <tr>
+      <th>id_column</th>
+      <td><p>common id column between sample_df and QC tables</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="source"><a class="anchor" href="#source"></a>Source</h2>
-
-    <p><a href='https://rpostgres.r-dbi.org/'>https://rpostgres.r-dbi.org/</a></p>
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>A DBI connection to the remote database</p>
-    <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
-
-    <p>for information on using R environmental files, see <a href='https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf'>https://support.rstudio.com/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf</a></p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
