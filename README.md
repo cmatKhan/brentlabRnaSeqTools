@@ -5,7 +5,7 @@ The following will both install, and update if there are changes in the reposito
 ```
 library(devtools)
 # remove build_vignettes to save time
-install_github("cmatKhan/brentlabRnaSeqTools", build_vignettes = TRUE, dependencies = TRUE)
+install_github("cmatKhan/brentlabRnaSeqTools", dependencies = TRUE)
 
 # after you get the package installed, do this:
 library(brentlabRnaSeqTools)
