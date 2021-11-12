@@ -44,6 +44,9 @@ Help me. I'm in the container.
     mpich \
     mpich-doc \
     vim \
+    libpq-dev \
+    libxml2-dev \
+    libssl-dev \
     && apt-get clean \
     && apt-get purge
 
@@ -51,7 +54,7 @@ Help me. I'm in the container.
   R --slave -e 'install.packages(c("remotes", "BiocManager"), dependencies = TRUE, Ncpus = 8)'
 
   # note -- can put options to R CMD build here, eg those configurations for Rmpi
-  R --slave -e 'remotes::install_github("cmatKhan/brentlabRnaSeqTools", upgrade = "always", force = TRUE, Ncpus = 8)'
+  R --slave -e 'remotes::install_github("cmatKhan/brentlabRnaSeqTools", type = "source", upgrade = "always", force = TRUE, Ncpus = 8)'
 
 #  --configure-args="  \\
 #   --with-Rmpi-include=/path/to/mpi_include_dir         \\
