@@ -1,5 +1,11 @@
 [![Codecov test coverage](https://codecov.io/gh/cmatKhan/brentlabRnaSeqTools/branch/master/graph/badge.svg)](https://codecov.io/gh/cmatKhan/brentlabRnaSeqTools?branch=master)[![R-CMD-check](https://github.com/cmatKhan/brentlabRnaSeqTools/workflows/R-CMD-check/badge.svg)](https://github.com/cmatKhan/brentlabRnaSeqTools/actions)
 
+# Documentation
+
+[Click here for the online documentation](https://cmatkhan.github.io/brentlabRnaSeqTools/). This is a work in progress, still. If there is documentation that you'd like that doesn't exist, please make an issue report.
+
+The "articles" link in the navbar at the top of the page has some vignettes that will help with some common tasks -- please do look at those, if you are a user of this package.
+
 # Installation and updating 
 The following will both install, and update if there are changes in the repository.
 ```
@@ -34,11 +40,10 @@ See the bamtools vignette for examples of how to use the functions to examine ba
 remove.packages("brentlabRnaSeqTools")
 ```
 
-# Documentation
-
-[Click here for the online documentation](https://cmatkhan.github.io/brentlabRnaSeqTools/). This is a work in progress -- more, and better organized, documentation will come shortly.
-
-That said, the "articles" link in the navbar at the top of the page has some vignettes that will help with some common tasks -- please do look at those, if you are a user of this package.
+# Singularity container
+```
+singularity pull library://cmatkhan/default/brentlab_rnaseq_tools:latest
+```
 
 # issues  
 please do post issues to the issues tab. Please include the full error code and the command/context that lead to the error
