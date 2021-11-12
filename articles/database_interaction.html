@@ -66,7 +66,10 @@
       <a href="../articles/experiment_sets.html">experiment_sets</a>
     </li>
     <li>
-      <a href="../articles/qcExplorer.html">qcExplorer</a>
+      <a href="../articles/genomics_tools.html">genomics_tools</a>
+    </li>
+    <li>
+      <a href="../articles/install_nf_co_rnaseq_pipeline.html">install_nf_co_rnaseq_pipeline</a>
     </li>
     <li>
       <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
@@ -96,7 +99,7 @@
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>database_interaction</h1>
             
-            <h4 class="date">08/05/2021</h4>
+            <h4 class="date">11/12/2021</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/vignettes/database_interaction.Rmd"><code>vignettes/database_interaction.Rmd</code></a></small>
       <div class="hidden name"><code>database_interaction.Rmd</code></div>
@@ -189,7 +192,7 @@ token = 'lalskdfjaslkdf12341klajsdf' # output of getUserAuthToken()
 <p>If the response is <code>success</code> or code <code>201</code> or <code>201</code>, then the communcation with the database was successful. If it was not, then you’ll get a <code>failure</code> or code <code>400</code>. In that case, save the reponse variable like so:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># note, the name might be something like "fastq_response_20210701.rds"</span>
-<span class="fu">write_rds</span><span class="op">(</span><span class="va">new_fastq_response</span>, <span class="st">"database_log/unique_name.rds"</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://readr.tidyverse.org/reference/read_rds.html">write_rds</a></span><span class="op">(</span><span class="va">new_fastq_response</span>, <span class="st">"database_log/unique_name.rds"</span><span class="op">)</span></code></pre></div>
 <p>And send it to whoever can use this this to figure out what went wrong.</p>
 </div>
 <div id="send-counts-to-the-database" class="section level2">
@@ -203,7 +206,7 @@ token = 'lalskdfjaslkdf12341klajsdf' # output of getUserAuthToken()
 <span class="va">auth_token</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv</a></span><span class="op">(</span><span class="st">"token"</span><span class="op">)</span>
 <span class="va">new_counts_path</span> <span class="op">=</span> <span class="st">"/path/to/counts/file"</span>
 <span class="co"># See section on `archiveDatabase`</span>
-<span class="va">fastq_df</span> <span class="op">=</span> <span class="fu">read_csv</span><span class="op">(</span><span class="st">"data/20210701/fastq.csv"</span><span class="op">)</span>
+<span class="va">fastq_df</span> <span class="op">=</span> <span class="fu"><a href="https://readr.tidyverse.org/reference/read_delim.html">read_csv</a></span><span class="op">(</span><span class="st">"data/20210701/fastq.csv"</span><span class="op">)</span>
 
 <span class="va">new_counts_response</span> <span class="op">=</span> <span class="fu"><a href="../reference/postCounts.html">postCounts</a></span><span class="op">(</span><span class="va">database_counts_url</span>, <span class="va">run_number</span>, <span class="va">auth_token</span>, <span class="va">new_counts_path</span>, <span class="va">fastq_df</span><span class="op">)</span></code></pre></div>
 <p>To pull the current state of the database on your computer, use <code><a href="../reference/archiveDatabase.html">archiveDatabase()</a></code>. Note: you do not need to keep historic copies locally, so clean this regularly by deleting old archives.</p>
@@ -235,12 +238,12 @@ token = 'lalskdfjaslkdf12341klajsdf' # output of getUserAuthToken()
 <p>You will next need to filter down to the set of samples you are interested in. Please ask for help with this if you need it. Here is an example which returns only the samples in a given run:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
-<span class="va">subset</span> <span class="op">=</span> <span class="va">combined_df</span> <span class="op">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="va">runNumber</span> <span class="op">==</span> <span class="fl">12345</span><span class="op">)</span></code></pre></div>
+<span class="va">subset</span> <span class="op">=</span> <span class="va">combined_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span>
+  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">runNumber</span> <span class="op">==</span> <span class="fl">12345</span><span class="op">)</span></code></pre></div>
 <p>Assuming you have the cluster mounted to your local system, you can now save this in your personal scratch <code>rnaseq_pipeline/query</code> directory:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
-<span class="fu">write_csv</span><span class="op">(</span><span class="va">subset</span>, <span class="st">"/path/to/mounted_scratch/rnaseq_pipeline/query/run_12345.csv"</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://readr.tidyverse.org/reference/write_delim.html">write_csv</a></span><span class="op">(</span><span class="va">subset</span>, <span class="st">"/path/to/mounted_scratch/rnaseq_pipeline/query/run_12345.csv"</span><span class="op">)</span></code></pre></div>
 <p>Now you would run the pipeline on the cluster as before. Instructions may be found here:</p>
 <p><a href="https://github.com/BrentLab/rnaseq_pipeline/wiki" class="uri">https://github.com/BrentLab/rnaseq_pipeline/wiki</a></p>
 </div>
@@ -262,7 +265,7 @@ token = 'lalskdfjaslkdf12341klajsdf' # output of getUserAuthToken()
 <div id="creating-experiment-sets-deseq-objects-etc" class="section level2">
 <h2 class="hasAnchor">
 <a href="#creating-experiment-sets-deseq-objects-etc" class="anchor"></a>Creating experiment sets, DESeq objects, etc</h2>
-<p>See <code><a href="https://rdrr.io/r/utils/browseVignettes.html">browseVignettes("brentlabRnaSeqTools")</a></code> experiment_sets</p>
+<p>See <code>browseVignettes("brentlabRnaSeqTools")</code> experiment_sets</p>
 </div>
   </div>
 

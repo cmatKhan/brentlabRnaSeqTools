@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>helper function to add .bai to bam path — getBamIndexPath • brentlabRnaSeqTools</title>
+<title>move fastq files from lts to scratch for nf-co/rnaseq pipeline — moveNfCoFastqFiles • brentlabRnaSeqTools</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,9 @@
 
 
 
-<meta property="og:title" content="helper function to add .bai to bam path — getBamIndexPath" />
-<meta property="og:description" content="helper function to add .bai to bam path" />
+<meta property="og:title" content="move fastq files from lts to scratch for nf-co/rnaseq pipeline — moveNfCoFastqFiles" />
+<meta property="og:description" content="using the samplesheet created by createNfCorePipelineSampleSheet,
+create a file to move fastq files from lts to scratch" />
 
 
 
@@ -138,29 +139,36 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>helper function to add .bai to bam path</h1>
-    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/BamFunctions.R'><code>R/BamFunctions.R</code></a></small>
-    <div class="hidden name"><code>getBamIndexPath.Rd</code></div>
+    <h1>move fastq files from lts to scratch for nf-co/rnaseq pipeline</h1>
+    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/processing_pipeline.R'><code>R/processing_pipeline.R</code></a></small>
+    <div class="hidden name"><code>moveNfCoFastqFiles.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>helper function to add .bai to bam path</p>
+    <p>using the samplesheet created by createNfCorePipelineSampleSheet,
+create a file to move fastq files from lts to scratch</p>
     </div>
 
-    <pre class="usage"><span class='fu'>getBamIndexPath</span><span class='op'>(</span><span class='va'>bamfile_path</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>moveNfCoFastqFiles</span><span class='op'>(</span><span class='va'>nf_co_samplesheet</span>, <span class='va'>from_prefix</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>bamfile_path</th>
-      <td><p>path to bamfile</p></td>
+      <th>nf_co_samplesheet</th>
+      <td><p>a samplesheet created by
+createNfCorePipelineSamplesheet() with the prefixes set to what the path will
+be once the files are moved to scratch</p></td>
+    </tr>
+    <tr>
+      <th>from_prefix</th>
+      <td><p>filepath from source up to the filename of the file</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>bamfile_path concat with '.bai'</p>
+    <p>a dataframe with two columns, source and destination</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

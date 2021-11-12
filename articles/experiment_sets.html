@@ -66,7 +66,10 @@
       <a href="../articles/experiment_sets.html">experiment_sets</a>
     </li>
     <li>
-      <a href="../articles/qcExplorer.html">qcExplorer</a>
+      <a href="../articles/genomics_tools.html">genomics_tools</a>
+    </li>
+    <li>
+      <a href="../articles/install_nf_co_rnaseq_pipeline.html">install_nf_co_rnaseq_pipeline</a>
     </li>
     <li>
       <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
@@ -96,7 +99,7 @@
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>experiment_sets</h1>
             
-            <h4 class="date">08/05/2021</h4>
+            <h4 class="date">11/12/2021</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/vignettes/experiment_sets.Rmd"><code>vignettes/experiment_sets.Rmd</code></a></small>
       <div class="hidden name"><code>experiment_sets.Rmd</code></div>
@@ -120,23 +123,23 @@
 <p>In general, the first step to creating an experimental set is to ensure that all ‘empty’ values in the data are the same. This may be accomplished by setting any empty strings to NA like so (using dplyr):</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
-<span class="va">metadata</span> <span class="op">=</span> <span class="va">metadata</span> <span class="op">%&gt;%</span>
+<span class="va">metadata</span> <span class="op">=</span> <span class="va">metadata</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span>
     <span class="co"># replace empty strings with NA</span>
-    <span class="fu">mutate_if</span><span class="op">(</span><span class="va">is.character</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="op">~</span><span class="fu">na_if</span><span class="op">(</span><span class="va">.</span>,<span class="st">""</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate_all.html">mutate_if</a></span><span class="op">(</span><span class="va">is.character</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/na_if.html">na_if</a></span><span class="op">(</span><span class="va">.</span>,<span class="st">""</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>Once this is accomplished, you may easily replace the NAs with a specific entry. An example of this will be in the text of the <code><a href="../reference/createNinetyMinuteInductionSet.html">createNinetyMinuteInductionSet()</a></code> function.</p>
 <p>Filtering with dplyr is quite simple. Extensive documentation may be found here:</p>
 <p><a href="https://dplyr.tidyverse.org/" class="uri">https://dplyr.tidyverse.org/</a></p>
 <p>And you may also use the functions listed below as templates.</p>
 <p>One handy trick: use the %in% operator to filter on multiple values in a given field. For example:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">metadata</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="va">temperature</span> <span class="op">%in%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">37</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">metadata</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">temperature</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">37</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>would return any record with temperature either 37 or 30.</p>
 <p>Another trick is to use grepl to search for a pattern in a field. For example:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">combined_df</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html">grepl</a></span><span class="op">(</span><span class="st">"PLAG"</span>, <span class="va">s2cDNAPreparer</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">combined_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html">grepl</a></span><span class="op">(</span><span class="st">"PLAG"</span>, <span class="va">s2cDNAPreparer</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>which may simiarly be achived with</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">combined_df</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="fu">str_detect</span><span class="op">(</span><span class="va">s2cDNAPreparer</span>, <span class="st">"PLAG"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">combined_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html">str_detect</a></span><span class="op">(</span><span class="va">s2cDNAPreparer</span>, <span class="st">"PLAG"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="minuteinduction---2016-grant-only" class="section level1">
 <h1 class="hasAnchor">
@@ -163,15 +166,16 @@
 <span class="co">#&gt;         is.na(genotype2), perturbation1 == "deletion" | is.na(perturbation1))</span>
 <span class="co">#&gt;     wt_induction_set = condition_fltr_metadata %&gt;% filter(genotype1 == </span>
 <span class="co">#&gt;         "CNAG_00000", strain == "TDY451")</span>
+<span class="co">#&gt;     fltr_grant_df = grant_df %&gt;% filter(STRAIN_STATUS == "done")</span>
 <span class="co">#&gt;     perturbed_induction_set = condition_fltr_metadata %&gt;% filter(genotype1 %in% </span>
-<span class="co">#&gt;         grant_df$GENOTYPE1 &amp; is.na(genotype2))</span>
+<span class="co">#&gt;         fltr_grant_df$GENOTYPE1 &amp; is.na(genotype2))</span>
 <span class="co">#&gt;     induction_set = bind_rows(wt_induction_set, perturbed_induction_set)</span>
 <span class="co">#&gt;     colnames(induction_set) = toupper(colnames(induction_set))</span>
 <span class="co">#&gt;     induction_set$FASTQFILENAME = str_remove(induction_set$FASTQFILENAME, </span>
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x5570994ef380&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55a454517a68&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="minuteinduction---with-doubles" class="section level1">
@@ -208,13 +212,13 @@
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x557098467da0&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55a48b01f618&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 <p>To create a set with all doubles in the database, simply filter for samples which have a double deletion. For example:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="co"># see database_interaction for instructions on creating the combined_df</span>
-<span class="va">combined_df</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="va">perturbation1</span><span class="op">==</span><span class="st">'deletion'</span> <span class="op">&amp;</span> <span class="va">perturbation2</span><span class="op">==</span><span class="st">'deletion'</span><span class="op">)</span>
+<span class="va">combined_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">perturbation1</span><span class="op">==</span><span class="st">'deletion'</span> <span class="op">&amp;</span> <span class="va">perturbation2</span><span class="op">==</span><span class="st">'deletion'</span><span class="op">)</span>
 
 <span class="co"># at this point, you may choose to filter further. For example, you may use the same conditions as the 90minuteInduction</span>
 <span class="co"># see createNinetyMinuteInductionSet for those conditions</span></code></pre></div>
@@ -227,21 +231,21 @@
 <code class="sourceCode R"><span class="co"># get wildtypes from the createNinetyMinuteInduction set</span>
 <span class="va">grant_induction_set</span> <span class="op">=</span> <span class="fu"><a href="../reference/createNinetyMinuteInductionSet.html">createNinetyMinuteInductionSet</a></span><span class="op">(</span><span class="va">combined_df</span>, <span class="va">grant_df</span><span class="op">)</span>
 
-<span class="va">induction_set_wt</span> <span class="op">=</span> <span class="va">grant_induction_set</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="va">genotype1</span> <span class="op">==</span> <span class="st">'CNAG_00000'</span><span class="op">)</span>
+<span class="va">induction_set_wt</span> <span class="op">=</span> <span class="va">grant_induction_set</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">genotype1</span> <span class="op">==</span> <span class="st">'CNAG_00000'</span><span class="op">)</span>
 
 <span class="co"># note: this isn't as explicit as the createNinetyMinuteInductionSet definition. It likely should be, which would mean replacing empty strings with a definite value, and then filtering exlicitly in those columns. This prevents any strange behavior with empty strings and NA</span>
-<span class="va">regulators_not_in_2016_grant</span> <span class="op">=</span> <span class="va">combined_df</span> <span class="op">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="va">purpose</span> <span class="op">==</span> <span class="st">"fullRNASeq"</span>, 
-         <span class="op">!</span><span class="va">genotype1</span> <span class="op">%in%</span> <span class="va">grant_df</span><span class="op">$</span><span class="va">GENOTYPE1</span>,
+<span class="va">regulators_not_in_2016_grant</span> <span class="op">=</span> <span class="va">combined_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span>
+  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">purpose</span> <span class="op">==</span> <span class="st">"fullRNASeq"</span>, 
+         <span class="op">!</span><span class="va">genotype1</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="va">grant_df</span><span class="op">$</span><span class="va">GENOTYPE1</span>,
          <span class="va">perturbation1</span> <span class="op">==</span> <span class="st">'deletion'</span>,
-         <span class="op">!</span><span class="va">fastqFileName</span> <span class="op">%in%</span> <span class="va">grant_induction_set</span>,
-         <span class="va">medium</span> <span class="op">%in%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"DMEM"</span><span class="op">)</span>,
-         <span class="va">temperature</span> <span class="op">%in%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">37</span><span class="op">)</span>,
-         <span class="va">atmosphere</span> <span class="op">%in%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"CO2"</span><span class="op">)</span>,
+         <span class="op">!</span><span class="va">fastqFileName</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="va">grant_induction_set</span>,
+         <span class="va">medium</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"DMEM"</span><span class="op">)</span>,
+         <span class="va">temperature</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">37</span><span class="op">)</span>,
+         <span class="va">atmosphere</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"CO2"</span><span class="op">)</span>,
          <span class="va">timePoint</span> <span class="op">==</span> <span class="fl">90</span>,
          <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">fastqFileName</span><span class="op">)</span><span class="op">)</span>
 
-<span class="va">other_regulators_set</span> <span class="op">=</span> <span class="fu">bind_rows</span><span class="op">(</span><span class="va">induction_set_wt</span>, <span class="va">regulators_not_in_2016_grant</span><span class="op">)</span></code></pre></div>
+<span class="va">other_regulators_set</span> <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind.html">bind_rows</a></span><span class="op">(</span><span class="va">induction_set_wt</span>, <span class="va">regulators_not_in_2016_grant</span><span class="op">)</span></code></pre></div>
 <p>Extracting overexpressions is similar</p>
 </div>
 <div id="environmental-perturbation" class="section level1">
@@ -270,7 +274,7 @@
 <span class="co">#&gt;         "noTimepoint")) %&gt;% mutate(fastqFileName = str_remove(fastqFileName, </span>
 <span class="co">#&gt;         ".fastq.gz")) %&gt;% rename_with(toupper)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55708c0e4740&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55a48ad396f8&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="quality-assessment-1-filter" class="section level1">

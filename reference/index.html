@@ -106,7 +106,10 @@
       <a href="../articles/experiment_sets.html">experiment_sets</a>
     </li>
     <li>
-      <a href="../articles/qcExplorer.html">qcExplorer</a>
+      <a href="../articles/genomics_tools.html">genomics_tools</a>
+    </li>
+    <li>
+      <a href="../articles/install_nf_co_rnaseq_pipeline.html">install_nf_co_rnaseq_pipeline</a>
     </li>
     <li>
       <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
@@ -160,21 +163,9 @@
       <tr>
         
         <td>
-          <p><code><a href="addTablesToQcDatabase.html">addTablesToQcDatabase()</a></code> </p>
-        </td>
-        <td><p>add new_qc_database tables to old_qc_database_tables</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="archiveDatabase.html">archiveDatabase()</a></code> </p>
         </td>
         <td><p>pull entire database (not counts) and save to output_dir for archival purposes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="calculateCoverage.html">calculateCoverage()</a></code> </p>
-        </td>
-        <td><p>calculate coverage over a given locus</p></td>
       </tr><tr>
         
         <td>
@@ -190,33 +181,9 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="compileQualimapSummaryMetrics.html">compileQualimapSummaryMetrics()</a></code> </p>
-        </td>
-        <td><p>parse qualimap summary output</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="compileTinOutput.html">compileTinOutput()</a></code> </p>
-        </td>
-        <td><p>extract all metrics from the output of tin.py run on a batch of files</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="connectToDatabase.html">connectToDatabase()</a></code> </p>
         </td>
         <td><p>Connect to a remote postgresql database</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="countLibrary.html">countLibrary()</a></code> </p>
-        </td>
-        <td><p>Count reads in a library like HTSeq</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="countReadsInRanges.html">countReadsInRanges()</a></code> </p>
-        </td>
-        <td><p>Count reads over GRanges object</p></td>
       </tr><tr>
         
         <td>
@@ -226,27 +193,21 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="createDatabase.html">createDatabase()</a></code> </p>
-        </td>
-        <td><p>create the sqlite database as input to qcExplorer</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="createEnvPertSet.html">createEnvPertSet()</a></code> </p>
         </td>
         <td><p>filter combined_df for environmental perturbation sample set</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="createInductionSetTally.html">createInductionSetTally()</a></code> </p>
+          <p><code><a href="createIgvBatchscript.html">createIgvBatchscript()</a></code> </p>
         </td>
-        <td><p>create 90 minute induction set tally</p></td>
+        <td><p>create IGV viewer batch script (single range, as many tracks as you like)</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="createMergedTable.html">createMergedTable()</a></code> </p>
+          <p><code><a href="createInductionSetTally.html">createInductionSetTally()</a></code> </p>
         </td>
-        <td><p>Join QC tables (not qc_metrics) in qcExplorer input sqlite database</p></td>
+        <td><p>create 90 minute induction set tally</p></td>
       </tr><tr>
         
         <td>
@@ -280,13 +241,6 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="createStatusDf.html">createStatusDf()</a></code> </p>
-        </td>
-        <td><p>create the metric status dataframe used to set thresholds and flag samples
-in the QC explorer</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="database_colnames.html">database_colnames</a></code> </p>
         </td>
         <td><p>set global variables, mostly as a hack to make the tidyverse data binding pass the R CMD Check</p></td>
@@ -299,12 +253,6 @@ in the QC explorer</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="decomposeStatus2Bit.html">decomposeStatus2Bit()</a></code> </p>
-        </td>
-        <td><p>decompose sums of powers of two to a list of the summed powers</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="deseqObjectWithProtocolSpecificSizeFactors.html">deseqObjectWithProtocolSpecificSizeFactors()</a></code> </p>
         </td>
         <td><p>create deseq object with protocol specific size factors</p></td>
@@ -314,12 +262,6 @@ in the QC explorer</p></td>
           <p><code><a href="determineLibraryStrandedness.html">determineLibraryStrandedness()</a></code> </p>
         </td>
         <td><p>from the metadata libraryProtocol column, determine the library strandedness.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="edgerLog2cpm.html">edgerLog2cpm()</a></code> </p>
-        </td>
-        <td><p>Convenience function for edgeR's log2cpm</p></td>
       </tr><tr>
         
         <td>
@@ -347,21 +289,9 @@ in the QC explorer</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="getCoverageOverRegion.html">getCoverageOverRegion()</a></code> </p>
-        </td>
-        <td><p>create a dataframe of coverage by nucleotide over a given locus</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="getMetadata.html">getMetadata()</a></code> </p>
         </td>
         <td><p>Get the combined metadata as a tibble from a remote database</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="getNfCoMultiqcDataPaths.html">getNfCoMultiqcDataPaths()</a></code> </p>
-        </td>
-        <td><p>get relevant QC metrics tables from nf-co/rnaseq multiqc output</p></td>
       </tr><tr>
         
         <td>
@@ -419,21 +349,15 @@ in the QC explorer</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="locusLog2Cpm.html">locusLog2Cpm()</a></code> </p>
+          <p><code><a href="localView.html">localView()</a></code> </p>
         </td>
-        <td><p>calculate log2cpm for a given locus</p></td>
+        <td><p>To view a data.frame / data.table in LibreOffice Calc</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="outlierFence.html">outlierFence()</a></code> </p>
+          <p><code><a href="moveNfCoFastqFiles.html">moveNfCoFastqFiles()</a></code> </p>
         </td>
-        <td><p>calculate lower/upper fence as a default threshold on qc metrics</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="parseBroadRnaseqcOutput.html">parseBroadRnaseqcOutput()</a></code> </p>
-        </td>
-        <td><p>extract all metrics from broad rnaseqc package output</p></td>
+        <td><p>move fastq files from lts to scratch for nf-co/rnaseq pipeline</p></td>
       </tr><tr>
         
         <td>
@@ -482,18 +406,6 @@ in the QC explorer</p></td>
           <p><code><a href="proteinCodingCount.html">proteinCodingCount()</a></code> </p>
         </td>
         <td><p>get total protein coding count from count dataframe</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="qcExplorer.html">qcExplorer()</a></code> </p>
-        </td>
-        <td><p>Explore QC metrics and set thresholds</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="qcGenotypeAndMarkerCoverage.html">qcGenotypeAndMarkerCoverage()</a></code> </p>
-        </td>
-        <td><p>calcluate genotype and marker coverages for a given metadata df</p></td>
       </tr><tr>
         
         <td>

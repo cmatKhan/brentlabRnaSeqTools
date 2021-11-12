@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>helper function to add .bai to bam path — getBamIndexPath • brentlabRnaSeqTools</title>
+<title>create IGV viewer batch script (single range, as many tracks as you like) — createIgvBatchscript • brentlabRnaSeqTools</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,19 @@
 
 
 
-<meta property="og:title" content="helper function to add .bai to bam path — getBamIndexPath" />
-<meta property="og:description" content="helper function to add .bai to bam path" />
+<meta property="og:title" content="create IGV viewer batch script (single range, as many tracks as you like) — createIgvBatchscript" />
+<meta property="og:description" content="this will create the following:
+new                                # batchscript keyword new (new snapshot)
+snapshotDirectory IGV_Snapshots    # output directory
+maxPanelHeight 500                 # maximum height of igv browser viewer
+genome organism.genome             # igv .genome file
+load control.bam                   # load alignment files in bam_file_list
+load perturbed.bam
+goto chr1:1-100                    # load region of interest
+snapshot batchfilename_locus1.png  # saves a snapshot of the IGV window to an image file
+goto chr10:3-300                   # repeat at another locus
+snapshot batchfilename_locus2.png
+exit                               # quit session" />
 
 
 
@@ -138,30 +149,72 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>helper function to add .bai to bam path</h1>
-    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/BamFunctions.R'><code>R/BamFunctions.R</code></a></small>
-    <div class="hidden name"><code>getBamIndexPath.Rd</code></div>
+    <h1>create IGV viewer batch script (single range, as many tracks as you like)</h1>
+    <small class="dont-index">Source: <a href='https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/R/IgvFunctions.R'><code>R/IgvFunctions.R</code></a></small>
+    <div class="hidden name"><code>createIgvBatchscript.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>helper function to add .bai to bam path</p>
+    <p>this will create the following:
+new                                # batchscript keyword new (new snapshot)
+snapshotDirectory IGV_Snapshots    # output directory
+maxPanelHeight 500                 # maximum height of igv browser viewer
+genome organism.genome             # igv .genome file
+load control.bam                   # load alignment files in bam_file_list
+load perturbed.bam
+goto chr1:1-100                    # load region of interest
+snapshot batchfilename_locus1.png  # saves a snapshot of the IGV window to an image file
+goto chr10:3-300                   # repeat at another locus
+snapshot batchfilename_locus2.png
+exit                               # quit session</p>
     </div>
 
-    <pre class="usage"><span class='fu'>getBamIndexPath</span><span class='op'>(</span><span class='va'>bamfile_path</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>createIgvBatchscript</span><span class='op'>(</span>
+  <span class='va'>bam_list</span>,
+  <span class='va'>granges</span>,
+  <span class='va'>igv_genome</span>,
+  <span class='va'>output_dir</span>,
+  <span class='va'>output_file_basename</span>,
+  maxPanelHeight <span class='op'>=</span> <span class='fl'>500</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>bamfile_path</th>
-      <td><p>path to bamfile</p></td>
+      <th>bam_list</th>
+      <td><p>list of bamfiles -- multiple files means multiple tracks</p></td>
+    </tr>
+    <tr>
+      <th>granges</th>
+      <td><p>granges describing the range you wish to visualize -- range
+must be on one chromosome/contig</p></td>
+    </tr>
+    <tr>
+      <th>igv_genome</th>
+      <td><p>.genome file created by IGV tools</p></td>
+    </tr>
+    <tr>
+      <th>output_dir</th>
+      <td><p>where to deposit both the script and the browser shots</p></td>
+    </tr>
+    <tr>
+      <th>output_file_basename</th>
+      <td><p>this will serve as both the name of the browser
+shot after running IGV, and the name o the batchscript itself</p></td>
+    </tr>
+    <tr>
+      <th>maxPanelHeight</th>
+      <td><p>default 500. height of the IGV window</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>bamfile_path concat with '.bai'</p>
+    <p>None. This prints a batch script to the output dir</p>
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
