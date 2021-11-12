@@ -66,7 +66,10 @@
       <a href="../articles/experiment_sets.html">experiment_sets</a>
     </li>
     <li>
-      <a href="../articles/qcExplorer.html">qcExplorer</a>
+      <a href="../articles/genomics_tools.html">genomics_tools</a>
+    </li>
+    <li>
+      <a href="../articles/install_nf_co_rnaseq_pipeline.html">install_nf_co_rnaseq_pipeline</a>
     </li>
     <li>
       <a href="../articles/running_the_nextflow_pipeline.html">running_the_nextflow_pipeline</a>
@@ -91,12 +94,12 @@
 
       
 
-      </header><script src="experiment_sets_files/header-attrs-2.9/header-attrs.js"></script><div class="row">
+      </header><script src="experiment_sets_files/header-attrs-2.11/header-attrs.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>experiment_sets</h1>
             
-            <h4 class="date">08/05/2021</h4>
+            <h4 class="date">11/11/2021</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/cmatKhan/brentlabRnaSeqTools/blob/master/vignettes/experiment_sets.Rmd"><code>vignettes/experiment_sets.Rmd</code></a></small>
       <div class="hidden name"><code>experiment_sets.Rmd</code></div>
@@ -163,15 +166,16 @@
 <span class="co">#&gt;         is.na(genotype2), perturbation1 == "deletion" | is.na(perturbation1))</span>
 <span class="co">#&gt;     wt_induction_set = condition_fltr_metadata %&gt;% filter(genotype1 == </span>
 <span class="co">#&gt;         "CNAG_00000", strain == "TDY451")</span>
+<span class="co">#&gt;     fltr_grant_df = grant_df %&gt;% filter(STRAIN_STATUS == "done")</span>
 <span class="co">#&gt;     perturbed_induction_set = condition_fltr_metadata %&gt;% filter(genotype1 %in% </span>
-<span class="co">#&gt;         grant_df$GENOTYPE1 &amp; is.na(genotype2))</span>
+<span class="co">#&gt;         fltr_grant_df$GENOTYPE1 &amp; is.na(genotype2))</span>
 <span class="co">#&gt;     induction_set = bind_rows(wt_induction_set, perturbed_induction_set)</span>
 <span class="co">#&gt;     colnames(induction_set) = toupper(colnames(induction_set))</span>
 <span class="co">#&gt;     induction_set$FASTQFILENAME = str_remove(induction_set$FASTQFILENAME, </span>
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55ff8adc5b38&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55fd77c50e90&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="minuteinduction---with-doubles" class="section level1">
@@ -208,7 +212,7 @@
 <span class="co">#&gt;         ".fastq.gz")</span>
 <span class="co">#&gt;     return(induction_set)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55ff8907e580&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55fdaeb890b0&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 <p>To create a set with all doubles in the database, simply filter for samples which have a double deletion. For example:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -270,7 +274,7 @@
 <span class="co">#&gt;         "noTimepoint")) %&gt;% mutate(fastqFileName = str_remove(fastqFileName, </span>
 <span class="co">#&gt;         ".fastq.gz")) %&gt;% rename_with(toupper)</span>
 <span class="co">#&gt; }</span>
-<span class="co">#&gt; &lt;bytecode: 0x55ff83847a00&gt;</span>
+<span class="co">#&gt; &lt;bytecode: 0x55fdae8a0f50&gt;</span>
 <span class="co">#&gt; &lt;environment: namespace:brentlabRnaSeqTools&gt;</span></code></pre></div>
 </div>
 <div id="quality-assessment-1-filter" class="section level1">

@@ -119,3 +119,53 @@ parseComparatives = function(value1, comparative, value2){
           stop("comparative not recognized")
   )
 }
+
+#' To view a data.frame / data.table in LibreOffice Calc
+#'
+#' @importFrom openxlsx write.xlsx
+#'
+#' @description Copied from
+#' \url{https://gitlab.com/zauster/ormisc/-/blob/master/R/view.R}.
+#' The purpose of this function is to write the dataframe to at tmp file
+#' and print the path. Use the clipr package to write the output to the
+#' clipboard for easy pasting into a terminal. See example.
+#'
+#' @references \url{https://gitlab.com/zauster/ormisc/-/blob/master/R/view.R}
+#'
+#' @param df the data.frame (or data.table or tibble)
+#'
+#' @examples
+#' \dontrun{
+#' install.packages(clipr)
+#' library(clipr)
+#' # df is some dataframe in your environment
+#' write_clip(localView(df))
+#' # in a terminal, you can how paste in the line that the cmd above put
+#' # in your clipboard and hit enter. your computer will know what to do next
+#' # hopefully
+#' }
+#'
+#' @export
+localView <- function(df) {
+  open_command <- switch(Sys.info()[['sysname']],
+                         Windows= 'open',
+                         Linux  = 'xdg-open',
+                         Darwin = 'open')
+
+  temp_file <- paste0(tempfile(), '.xlsx')
+
+  # data <- as.data.frame(df)
+  write.xlsx(df, file = temp_file)
+  open_cmd = paste(open_command, temp_file)
+  open_cmd
+
+  # this following does not work on my computer, but would automate this if it did.
+  # this error:
+  # Warning: failed to read path from javaldx
+  # /usr/lib/libreoffice/program/soffice.bin: error while loading shared libraries:
+  # libreglo.so: cannot open shared object file: No such file or directory
+  # possible solution:
+  # https://askubuntu.com/a/977080
+  # invisible(system(open_cmd))
+}
+

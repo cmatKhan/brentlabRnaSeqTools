@@ -1,0 +1,132 @@
+---
+title: "genomics_tools"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{genomics_tools}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(brentlabRnaSeqTools)
+```
+
+# Summary
+
+This is meant as an index of genomics tools that I have found and tried. I am 
+starting this on 20210809 and will try to keep it up to date from now on
+
+# Alignments
+
+readGAlignments and GenomicFeatures work. However, I find GenomicFeatures to be 
+both difficult to use and buggy unless you are using a genome from AnnotateDbi 
+or the like. My personal preference right now is using `rtracklayer::import` to 
+create a gRangeList object from an annotation file. You can use that to visualize 
+using the function in this package called `createIgvBatchScript`, or anything else 
+that takes granges as input.
+
+```{r}
+
+```
+
+# Counts
+
+Rsubreads is __very__ fast. It is a raw count algorithm, similar to HTSeq (but 
+faster). 
+
+# Browser and browser-esque visualization
+
+## IGV
+
+As far as I know, there is no good interactive R IGV package. There is a function 
+in this package, `createIgvBatchScript`, which will create a batch script for you. 
+You can use this with `map` or `lapply` to create any number of batch scripts, and 
+then run those separate scripts either on a cluster as an array job or sequentially 
+on your local. See `?createIgvBatchScript`.
+
+## ggbio
+
+This works great -- it uses the bioconductor genomics objects 
+(GRanges, annotation databases), and produces good enough visualizations 
+(igv/ucsc is better, but this is great/better for quickly producing plots)
+
+## wiggleplotr
+
+https://bioconductor.org/packages/release/bioc/vignettes/wiggleplotr/inst/doc/wiggleplotr.html
+
+For transcript visualization. this works quite nicely. needs bigWig files (produced by the nf-co/rnaseq pipeline). Can use txDb to create GRangesList of transcripts to a given gene
+
+This is a dummy example -- this plots separate gene CDS rather than transcripts of a single gene -- but it works for crypto with the txDb created from the gtf
+
+```{r}
+
+some_cds = kn99_cds[c("CNAG_02196", "CNAG_02197","CNAG_02198")]
+plotTranscripts(some_cds)
+
+```
+
+## rtracklayer
+
+If you're using a model organism that already has the annotation/genome object 
+created by UCSC (eg human), then this works. Note that as of 2021 11 11, you 
+need an absolutely up to date version of BiocManager for `hg38` to work on the 
+UCSC browser.
+
+## trackplot
+
+[https://github.com/PoisonAlien/trackplot](https://github.com/PoisonAlien/trackplot)
+
+This did not work for crypto due to some malformed GTF entries -- see error:
+
+```{raw}
+
+> track_plot(summary_list = track_data, draw_gene_track = TRUE, gene_model = "data/liftoff_h99_to_kn99_with_markers.gtf", isGTF = TRUE)
+Parsing gtf file..
+Error in data.table::foverlaps(x = query, y = gtf, type = "any", nomatch = NULL) : 
+  NA values in data.table 'y' start column: 'start'. All rows with NA values in the range columns must be removed for foverlaps() to work.
+
+```
+
+However, it probably would work for human data. The visualizations look nice, and the nf-co/rnaseq pipeline produces bigwig files.
+
+The one dependency is bwtools. Installing bwtools was a challenge -- the author of trackplot had a useful comment in the issues, however:
+
+[This worked for me](https://github.com/CRG-Barcelona/bwtool/issues/49#issuecomment-604477559):
+
+```{sh}
+
+git clone 'https://github.com/CRG-Barcelona/bwtool'
+git clone 'https://github.com/CRG-Barcelona/libbeato'
+git clone https://github.com/madler/zlib
+
+cd libbeato/
+git checkout 0c30432af9c7e1e09ba065ad3b2bc042baa54dc2
+./configure
+make
+sudo make install # do this to install globally. omit if installing locally, eg on the cluster
+cd ..
+
+cd zlib
+./configure
+make
+sudo make install # see above
+cd ..
+
+cd bwtool/
+# if you have installed this globally with sudo
+./configure
+# if you are installing localling, then do this:
+./configure CFLAGS='-I../libbeato -I../zlib' LDFLAGS='-L../libbeato/jkweb -L../libbeato/beato -L../zlib'
+make
+# if installing globally
+sudo make install
+
+```

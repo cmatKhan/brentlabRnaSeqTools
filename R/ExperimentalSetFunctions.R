@@ -1,7 +1,7 @@
 #' filter combined_df for environmental perturbation sample set
 #'
 #' @import magrittr
-#' @importFrom dplyr mutate_if mutate filter across
+#' @importFrom dplyr mutate_if mutate filter across rename_with
 #' @importFrom stringr str_remove
 #' @importFrom tidyr replace_na
 #'
@@ -54,7 +54,7 @@ createEnvPertSet = function(combined_df){
 #' @importFrom tidyr replace_na
 #'
 #' @param metadata is the combined tables of the metadata database
-#' @param grant_df is the 2016 grant summary TODO: put this in DATA
+#' @param grant_df is the 2016 grant summary
 #'
 #' @return the set metadata -- single KO only
 #'
@@ -95,9 +95,14 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
   # get wildtypes
   wt_induction_set = condition_fltr_metadata %>%
     filter(genotype1 == "CNAG_00000", strain == 'TDY451')
+
   # filter for genotypes in the grant summary
+  # exclude genotypes labelled 2 (which means 2 failed attempts)
+  fltr_grant_df = grant_df %>%
+    filter(STRAIN_STATUS == "done")
+
   perturbed_induction_set = condition_fltr_metadata %>%
-    filter(genotype1 %in% grant_df$GENOTYPE1 & is.na(genotype2))
+    filter(genotype1 %in% fltr_grant_df$GENOTYPE1 & is.na(genotype2))
 
   # put the wt and filtered genotypes together
   induction_set = bind_rows(wt_induction_set, perturbed_induction_set)
@@ -105,7 +110,8 @@ createNinetyMinuteInductionSet = function(metadata, grant_df){
   # set colnames to upper
   colnames(induction_set) = toupper(colnames(induction_set))
   # remove file extension
-  induction_set$FASTQFILENAME = str_remove(induction_set$FASTQFILENAME, ".fastq.gz")
+  induction_set$FASTQFILENAME = str_remove(induction_set$FASTQFILENAME,
+                                           ".fastq.gz")
 
   return(induction_set)
 }

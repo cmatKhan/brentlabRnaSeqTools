@@ -1,0 +1,65 @@
+---
+title: "install_nf_co_rnaseq_pipeline"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{install_nf_co_rnaseq_pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# Create an environment with nextflow
+
+```{bash}
+cd /scratch/mblab/$USER
+
+# launch an interactive session
+srun --mem=20000 --cpus-per-task=1 -J interactive -p interactive --pty /bin/bash -l
+
+# note: there are no promises that this package works. My suggestion is that you use your own installation of conda
+ml miniconda
+
+mkdir conda_envs
+
+# this will create the environment directory in your scratch space (yes, it may be deleted. you'd have to make a new one when that happens), and installs nextflow into it
+create create -p conda_envs/nextflow nextflow
+
+```
+
+# Launch the environment and test nextflow
+
+_Not_ with `conda activate nextflow`. Because you created this outside of your `$CONDA_HOME`, you have to provide the path like so:
+
+```{bash}
+
+# do this if you are not already there
+cd /scratch/mblab/$USER
+srun --mem=20000 --cpus-per-task=1 -J interactive -p interactive --pty /bin/bash -l
+ml miniconda
+
+
+# activate the environment
+source activate ./conda_envs/nextflow
+
+nextflow run hello # note: might take a few minutes
+```
+
+# Download the configuration files
+
+You could put this in `$HOME`, if you want, to avoid having it garbage collected
+
+```{bash}
+git clone https://github.com/cmatKhan/configs.git
+```
+
+In the submission to nextflow, you will use one of the configurations in the
+subdirectory /conf of the repository above. Eventually this may be merged into
+the main fork of the configs repository, at which point you would just include
+the argument `-p wustl_htcf` in your nextflow command

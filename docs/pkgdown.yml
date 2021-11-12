@@ -6,7 +6,8 @@ articles:
   create_set: create_set.html
   database_interaction: database_interaction.html
   experiment_sets: experiment_sets.html
-  qcExplorer: qcExplorer.html
+  genomics_tools: genomics_tools.html
+  install_nf_co_rnaseq_pipeline: install_nf_co_rnaseq_pipeline.html
   running_the_nextflow_pipeline: running_the_nextflow_pipeline.html
-last_built: 2021-08-05T18:16Z
+last_built: 2021-11-12T00:50Z
 

@@ -9,7 +9,7 @@ createNinetyMinuteInductionSet(metadata, grant_df)
 \arguments{
 \item{metadata}{is the combined tables of the metadata database}
 
-\item{grant_df}{is the 2016 grant summary TODO: put this in DATA}
+\item{grant_df}{is the 2016 grant summary}
 }
 \value{
 the set metadata -- single KO only

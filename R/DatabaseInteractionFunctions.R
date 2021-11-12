@@ -3,7 +3,7 @@
 #' @description Join the biosample, rnasample, s1sample, s2sample, library, fastqFiles and qualityAssessment tables (in that order, left joins) and return the result as a tibble
 #'
 #' @importFrom RPostgres dbDisconnect
-#' @importFrom dplyr left_join
+#' @importFrom dplyr left_join tbl
 #'
 #' @description Use the RPostgres package to connect to a remote postgresql database, do the table joining, and return the joined metadata as a tibble. The database connection is closed
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
@@ -86,6 +86,7 @@ getRawCounts = function(database_host, database_name, database_user, database_pa
 #'
 #' @importFrom RPostgres dbDisconnect
 #' @importFrom readr write_csv
+#' @importFrom dplyr tbl
 #'
 #' @param database_host if connecting to a database hosted on AWS, it might be something like ec2-54-83-201-96.compute-1.amazonaws.com
 #' @param database_name name of the database, eg for cryptococcus kn99, the database might be named kn99_database. Check with the documentation, whoever set up the database, or get into the server and check directly

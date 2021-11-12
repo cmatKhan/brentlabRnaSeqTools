@@ -46,20 +46,20 @@ misc = c("GENOTYPE", "STRAIN_STATUS", "RLE", "TOTALDEDUPLICATEDPERCENTAGE", "qc_
          "IQR", "Sample", "Expression\ Profiling\ Efficiency", "Exonic\ Rate", "Intronic\ Rate", "Intergenic\ Rate",
         "Intragenic\ Rate", "rRNA\ Rate", "Estimated\ Library\ Complexity", "expression_profiling_efficiency",
         "exonic_rate", "intronic_rate", "intergenic_rate", "intragenic_rate", "rRna_rate", "estimated_library_complexity",
-        "V1", "V2")
+        "V1", "V2", "destination")
 
-shiny_app_vars = c('actionButton', 'audit_flag', 'checkboxGroupInput', 'column', 'downloadButton',
-                   'downloadHandler', 'eventReactive', 'fluidRow', 'icon', 'metric', 'numericInput',
-                   'observeEvent', 'prepend', 'radioButtons', 'reactiveValues', 'reduce', 'req',
-                   'selectInput', 'shinyApp', 'showNotification', 'sliderInput', 'status', 'statusDecomp',
-                   'tabPanel', 'tabPanelBody', 'tabsetPanel', 'updateCheckboxGroupInput',
-                   'updateNumericInput', 'updateRadioButtons', 'updateSelectInput',
-                   'updateSliderInput', 'updateTabsetPanel')
+# shiny_app_vars = c('actionButton', 'audit_flag', 'checkboxGroupInput', 'column', 'downloadButton',
+#                    'downloadHandler', 'eventReactive', 'fluidRow', 'icon', 'metric', 'numericInput',
+#                    'observeEvent', 'prepend', 'radioButtons', 'reactiveValues', 'reduce', 'req',
+#                    'selectInput', 'shinyApp', 'showNotification', 'sliderInput', 'status', 'statusDecomp',
+#                    'tabPanel', 'tabPanelBody', 'tabsetPanel', 'updateCheckboxGroupInput',
+#                    'updateNumericInput', 'updateRadioButtons', 'updateSelectInput',
+#                    'updateSliderInput', 'updateTabsetPanel')
 
 package_data_variables = c("test_metadata", "run_numbers_with_leading_zero")
 
 global_variables_vector = c(database_colnames, old_qc_colnames, misc,
-                      package_data_variables, shiny_app_vars)
+                      package_data_variables) #shiny_app_vars
 
 utils::globalVariables(global_variables_vector)
 utils::globalVariables(toupper(global_variables_vector))

@@ -1,5 +1,7 @@
 #' calculate RLE of a numeric dataframe
 #'
+#' @importFrom dplyr mutate_all
+#'
 #' @param counts_df gene by samples dataframe of raw counts or logged counts (see paramter logged)
 #' @param log2_transformed_flag Default FALSE set to true if log2 transformed counts are passed
 #'
@@ -14,14 +16,27 @@ calculateRLE = function(counts_df, log2_transformed_flag = FALSE){
 
   counts_df = as_tibble(counts_df)
 
-  # if log2_transformed_flag==TRUE, re-assign counts_df to log2_counts_df. else, add a pseudocount and log2
-  ifelse(log2_transformed_flag, assign('log2_counts_df', counts_df),  assign('log2_counts_df', log2(counts_df + 1)))
+  if(ncol(counts_df) < 3){
+    rle_table_full = counts_df %>%
+      mutate_all(~replace(., is.numeric(.), NA))
 
-  # calculate median expression for each gene across samples
-  gene_wise_medians = apply(log2_counts_df, 1, median, na.rm=TRUE)
+    message(paste0("The following replicate set has less than 3 reps: ",
+                   colnames(counts_df), ". It is being returned as a count matrix
+                   of NAs (with appropriate column headings"))
+  } else{
 
-  # calculate deviations from the median
-  rle_table_full = sweep(log2_counts_df, 1, gene_wise_medians, '-')
+    # if log2_transformed_flag==TRUE, re-assign counts_df to log2_counts_df. else, add a pseudocount and log2
+    ifelse(log2_transformed_flag,
+           assign('log2_counts_df',
+                  counts_df),
+           assign('log2_counts_df', log2(counts_df + 1)))
+
+    # calculate median expression for each gene across samples
+    gene_wise_medians = apply(log2_counts_df, 1, median, na.rm=TRUE)
+
+    # calculate deviations from the median
+    rle_table_full = sweep(log2_counts_df, 1, gene_wise_medians, '-')
+  }
 
   return(rle_table_full)
 
@@ -85,7 +100,10 @@ rleSummary = function(rle_table_full){
 rleByReplicateGroup = function(replicates_vector, gene_quants, log2_transformed_flag){
 
 
-  lapply(replicates_vector, function(x) calculateRLE(gene_quants[, x], log2_transformed_flag=log2_transformed_flag))
+  lapply(replicates_vector,
+         function(x)
+           calculateRLE(gene_quants[, x, drop=FALSE],
+                        log2_transformed_flag=log2_transformed_flag))
 
 }
 

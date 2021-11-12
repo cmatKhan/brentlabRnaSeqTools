@@ -72,3 +72,47 @@ createNfCorePipelineSampleSheet = function(metadata, sample_columns,
   sample_sheet_df
 
 }
+
+#'
+#' move fastq files from lts to scratch for nf-co/rnaseq pipeline
+#' @description using the samplesheet created by createNfCorePipelineSampleSheet,
+#' create a file to move fastq files from lts to scratch
+#'
+#' @importFrom dplyr mutate select bind_rows
+#'
+#' @param nf_co_samplesheet a samplesheet created by
+#' createNfCorePipelineSamplesheet() with the prefixes set to what the path will
+#' be once the files are moved to scratch
+#' @param from_prefix filepath from source up to the filename of the file
+#'
+#' @return a dataframe with two columns, source and destination
+#'
+#' @export
+moveNfCoFastqFiles = function(nf_co_samplesheet, from_prefix){
+
+  if(unique(nf_co_samplesheet$fastq_2) == ''){
+
+    fastq_1 = nf_co_samplesheet %>%
+      mutate(source = file.path(from_prefix,
+                                basename(dirname(fastq_1)),
+                                basename(fastq_1))) %>%
+      mutate(destination = fastq_1) %>%
+      dplyr::select(source, destination)
+
+    return(fastq_1)
+
+  } else{
+
+    fastq_2 = nf_co_samplesheet %>%
+      mutate(source = file.path(from_prefix,
+                                basename(dirname(fastq_1)),
+                                basename(fastq_1))) %>%
+      mutate(destination = fastq_2) %>%
+      dplyr::select(source, destination)
+
+    return(bind_rows(fastq_1, fastq_2))
+
+  }
+
+
+}

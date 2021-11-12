@@ -15,50 +15,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Create an environment with nextflow
-
-```{bash}
-cd /scratch/mblab/$USER
-
-# launch an interactive session
-srun --mem=20000 --cpus-per-task=1 -J interactive -p interactive --pty /bin/bash -l
-
-# note: there are no promises that this package works. My suggestion is that you use your own installation of conda
-ml miniconda
-
-mkdir conda_envs
-
-# this will create the environment directory in your scratch space (yes, it may be deleted. you'd have to make a new one when that happens), and installs nextflow into it
-create create -p conda_envs/nextflow nextflow
-
-```
-
-# Launch the environment and test nextflow
-
-_Not_ with `conda activate nextflow`. Because you created this outside of your `$CONDA_HOME`, you have to provide the path like so:
-
-```{bash}
-
-# do this if you are not already there
-cd /scratch/mblab/$USER
-srun --mem=20000 --cpus-per-task=1 -J interactive -p interactive --pty /bin/bash -l
-ml miniconda
-
-
-# activate the environment
-source activate ./conda_envs/nextflow
-
-nextflow run hello # note: might take a few minutes
-```
-
-# Download the configuration files
-
-You could put this in `$HOME`, if you want, to avoid having it garbage collected
-
-```{bash}
-git clone https://github.com/cmatKhan/configs.git
-```
-
 # Run the nextflow pipeline
 
 This is a bit of a misnomer -- nextflow is simply the language. The pipeline is from [nf-co.re](https://nf-co.re/), which is a highly curated repository for nextflow pipelines. There is only one pipeline for any given task, meaning there will not be 10 different rnaseq_pipelines. Rather, all development for rnaseq is happening in one spot.
@@ -83,18 +39,50 @@ sample fastq_1                                                               fas
 
 ## Move the fastq files to scratch
 
-This is a frustrating step, and one that I haven't re-written a function for yet in the brentlabRnaSeqTools package. Right now, this is how I do it. If you are not a computational person in the lab, please just ask one of us to move the files for you
+For those computational people, what you need to do is move the files from lts to scratch. Use your favorite method.
+
+If you wish to use my methods, here is how I do it:
+
+In the brentlabRnaSeqTools there is a function called `moveNfCoFastqFiles()` which creates a two column dataframe of structure column1: source, column2: destination. I write that to the cluster and then use the bash script below to move the files. Here is my full process, using crypto as an example:
+
+```{r}
+
+prefix = "/lts/mblab/Crypto/rnaseq_data/lts_sequence"
+
+lookup = moveNfCoFastqFiles(sample_sheet, prefix)
+
+# from my local with the cluster mounted
+write_tsv(lookup, "/scratch/mblab/chasem/rnaseq_pipeline/lookups/my_lookup.tsv")
+
+```
+I then go over to the cluster and use a script called moveFiles.sh. It contains:
 
 ```{bash}
 
-awk -F"," '{print $2}' sample_sheet.csv > fastq_lookup.txt
+#!/bin/bash
 
-mkdir scratch_fastqs
+nrow=$(wc -l $1 | grep -oP "^[[:digit:]]+")
 
-cat fastq_lookup.txt | while read line; do rsync -aHvR $line ../scratch_sequence/fastq_set/; done
 
-# and then I move the run directories back up to the level that I want them -- please just ask if this doesn't make sense. Eventually there will be a function in the brentlabRnaSeqTools. If you have a better bash method, please tell me.
+for i in $(seq 1 $nrow); do
+    read s d < <(sed -n ${i}p $1)
 
+    dest_dir=$(dirname $d) 
+    
+    mkdir -p $dest_dir
+
+    echo "copying $1 of $nrow"
+
+    rsync -aHv $s $d
+
+done
+
+```
+
+So from the command line I do this:
+
+```{bash}
+./job_scripts/moveFiles.sh lookups/my_lookup.tsv
 ```
 
 
@@ -108,12 +96,13 @@ data.
 ```{raw}
 
 {
-    "input": "sample_summary.csv",
-    "outdir": ".\/work",
-    "gtf": "crypto.gtf.gz",
+    "input": "\/scratch\/mblab\/chasem\/rnaseq_pipeline\/daniel_set\/daniel_sample.csv",
+    "outdir": ".\/daniel_set_results",
+    "gtf": "/scratch\/mblab/chasem\/rnaseq_pipeline\/genome_files_curr\/KN99\/liftoff_h99_to_kn99.gtf",
+    "fasta": "\/scratch\/mblab/chasem\/rnaseq_pipeline\/genome_files_curr\/KN99\/KN99_genome_fungidb.fasta",
     "gtf_extra_attributes": "ID",
     "featurecounts_group_type": "",
-    "rseqc_modules": "bam_stat,inner_distance,infer_experiment,junction_annotation,junction_saturation,read_distribution,read_duplication,tin",
+    "rseqc_modules": "bam_stat,inner_distance,infer_experiment,junction_annotation,junction_saturation,read_distribution,read_duplication",
     "skip_bigwig": true,
     "skip_biotype_qc": true
 }
